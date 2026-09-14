@@ -59,11 +59,15 @@ public class RbacTestFixtures {
     }
 
     public UUID insertCompany(String name) {
+        return insertCompany(name, "ACTIVE");
+    }
+
+    public UUID insertCompany(String name, String status) {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update(
                 "INSERT INTO company (id, name, status, created_at, updated_at) "
-                        + "VALUES (?, ?, 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-                id.toString(), name);
+                        + "VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                id.toString(), name, status);
         return id;
     }
 

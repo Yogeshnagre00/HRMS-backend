@@ -52,6 +52,17 @@ public final class ApiMessages {
     public static final String ROLE_NOT_FOUND = "Role not found";
     public static final String USER_NOT_FOUND = "User not found";
 
+    // --- Company ---------------------------------------------------------
+    public static final String COMPANY_NOT_FOUND = "Company was not found";
+    public static final String COMPANY_ALREADY_EXISTS =
+            "An active company already exists; v0 supports a single company";
+
+    // --- Legal Entity ----------------------------------------------------
+    public static final String LEGAL_ENTITY_NOT_FOUND = "Legal entity was not found";
+    public static final String LEGAL_ENTITY_ALREADY_EXISTS =
+            "An active legal entity already exists for this company; "
+                    + "v0 supports a single legal entity per company";
+
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";
 
