@@ -1,0 +1,13 @@
+-- =============================================================================
+-- V1 - Foundation baseline (HRMS Payroll MVP, task V0-001)
+--
+-- This migration intentionally creates NO business tables. Its purpose is to
+-- establish and prove the Flyway migration mechanism and the database
+-- connection. All HRMS business entities (employee, payroll, statutory, etc.)
+-- are introduced by later tasks from the approved Data Model specification.
+--
+-- The statement below is a portable no-op (valid on PostgreSQL and the H2
+-- PostgreSQL-compatibility mode used by the test suite) so the migration is
+-- recorded in flyway_schema_history without introducing schema drift.
+-- =============================================================================
+SELECT 1;

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Logging foundation for the HRMS Payroll MVP (task V0-001).
+
+  Builds on Spring Boot's default logback setup: a console appender with a
+  consistent pattern that includes a correlation-friendly context. Profile
+  blocks keep local development readable and production lean. Business/audit
+  logging is layered on in later tasks; this only establishes the baseline.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <springProfile name="local,test">
+        <logger name="com.example.HRMS" level="DEBUG"/>
+        <logger name="org.flywaydb" level="INFO"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="prod">
+        <logger name="com.example.HRMS" level="INFO"/>
+        <root level="WARN">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Fallback when no profile is active. -->
+    <springProfile name="!local &amp; !test &amp; !prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>
