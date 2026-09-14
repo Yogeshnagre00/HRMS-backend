@@ -8,9 +8,11 @@ import com.example.HRMS.auth.dto.AuthDtos.LoginResponse;
 import com.example.HRMS.auth.dto.AuthDtos.MeResponse;
 import com.example.HRMS.auth.dto.AuthDtos.MfaVerifyRequest;
 import com.example.HRMS.auth.dto.AuthDtos.PasswordChangeRequest;
+import com.example.HRMS.auth.dto.AuthDtos.UserSummary;
 import com.example.HRMS.auth.entity.AppUser;
 import com.example.HRMS.auth.entity.UserStatus;
 import com.example.HRMS.auth.repository.AppUserRepository;
+import com.example.HRMS.auth.service.RefreshTokenService.RotationResult;
 import com.example.HRMS.common.api.ApiException;
 import com.example.HRMS.common.security.AuthenticatedUser;
 import com.example.HRMS.security.core.JwtService;
@@ -27,17 +29,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Authentication use cases: login (with MFA branch), MFA verification, logout,
- * current-identity, and password change. Owned by the {@code auth} module.
+ * Authentication use cases: login (with MFA branch), MFA verification, token
+ * refresh, logout, current-identity, and password change. Owned by the
+ * {@code auth} module.
  *
  * <p>Security properties: passwords are BCrypt-verified and never logged,
  * returned, or audited; login failures do not reveal whether the username
  * exists; password change bumps the user's token version to invalidate all
- * previously issued JWTs. Security-sensitive events are audited.
+ * previously issued access tokens and revokes all refresh tokens. Successful
+ * authentication issues a short-lived access token plus a longer-lived,
+ * server-tracked, rotating refresh token. Security-sensitive events are audited.
  *
- * <p>Roles/permissions are resolved by the RBAC module at authentication time
- * and carried on the {@link AuthenticatedUser} principal, so this service does
- * not depend on the RBAC module.
+ * <p>Roles/permissions are resolved by the RBAC module: on protected requests
+ * via the {@link AuthenticatedUser} principal, and for the login summary via the
+ * {@link UserRolesLookup} port (implemented by RBAC), so this service does not
+ * depend on the RBAC module directly.
  */
 @Service
 public class AuthService {
@@ -47,6 +53,8 @@ public class AuthService {
     private final JwtService jwtService;
     private final TotpVerifier totpVerifier;
     private final RevokedTokenRepository revokedTokenRepository;
+    private final RefreshTokenService refreshTokenService;
+    private final UserRolesLookup userRolesLookup;
     private final AuditService auditService;
 
     public AuthService(AppUserRepository userRepository,
@@ -54,12 +62,16 @@ public class AuthService {
                        JwtService jwtService,
                        TotpVerifier totpVerifier,
                        RevokedTokenRepository revokedTokenRepository,
+                       RefreshTokenService refreshTokenService,
+                       UserRolesLookup userRolesLookup,
                        AuditService auditService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.totpVerifier = totpVerifier;
         this.revokedTokenRepository = revokedTokenRepository;
+        this.refreshTokenService = refreshTokenService;
+        this.userRolesLookup = userRolesLookup;
         this.auditService = auditService;
     }
 
@@ -86,11 +98,9 @@ public class AuthService {
             return LoginResponse.mfaRequired(challenge.token());
         }
 
-        IssuedToken access = jwtService.issueAccessToken(
-                user.getId(), user.getUsername(), user.getTokenVersion());
         auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
                 AuditActions.LOGIN_SUCCESS, AuditActions.ENTITY_USER, user.getId(), "SUCCESS"));
-        return LoginResponse.authenticated(access.token(), user.isMustChangePassword());
+        return issueAuthenticatedResponse(user);
     }
 
     @Transactional
@@ -114,33 +124,44 @@ public class AuthService {
             throw ApiException.unauthorized("Invalid MFA code");
         }
 
-        IssuedToken access = jwtService.issueAccessToken(
-                user.getId(), user.getUsername(), user.getTokenVersion());
         auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
                 AuditActions.MFA_SUCCESS, AuditActions.ENTITY_USER, user.getId(), "SUCCESS"));
         auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
                 AuditActions.LOGIN_SUCCESS, AuditActions.ENTITY_USER, user.getId(), "SUCCESS"));
-        return LoginResponse.authenticated(access.token(), user.isMustChangePassword());
+        return issueAuthenticatedResponse(user);
+    }
+
+    /** Exchange a valid refresh token for a new access token + rotated refresh token. */
+    @Transactional
+    public LoginResponse refresh(String refreshToken) {
+        RotationResult result = refreshTokenService.rotate(refreshToken);
+        AppUser user = result.user();
+        return LoginResponse.authenticated(
+                result.accessToken(),
+                result.refreshToken(),
+                refreshTokenService.accessTokenExpiresInSeconds(),
+                user.isMustChangePassword(),
+                userSummary(user));
     }
 
     @Transactional
-    public void logout(AuthenticatedUser principal, String bearerToken) {
-        if (bearerToken == null) {
-            return;
-        }
-        try {
-            ParsedToken parsed = jwtService.parse(bearerToken);
-            if (!revokedTokenRepository.existsByJti(parsed.jti())) {
-                revokedTokenRepository.save(new RevokedToken(
-                        parsed.jti(),
-                        parsed.userId(),
-                        LocalDateTime.ofInstant(parsed.expiresAt(), ZoneOffset.UTC),
-                        LocalDateTime.now()));
+    public void logout(AuthenticatedUser principal, String bearerToken, String refreshToken) {
+        // Revoke the presented access token (JWT denylist) and refresh token.
+        if (bearerToken != null) {
+            try {
+                ParsedToken parsed = jwtService.parse(bearerToken);
+                if (!revokedTokenRepository.existsByJti(parsed.jti())) {
+                    revokedTokenRepository.save(new RevokedToken(
+                            parsed.jti(),
+                            parsed.userId(),
+                            LocalDateTime.ofInstant(parsed.expiresAt(), ZoneOffset.UTC),
+                            LocalDateTime.now()));
+                }
+            } catch (Exception ex) {
+                // Access token already invalid; nothing to revoke there.
             }
-        } catch (Exception ex) {
-            // Token already invalid; nothing to revoke.
-            return;
         }
+        refreshTokenService.revoke(refreshToken);
         auditService.record(AuditEvent.of(principal.userId(), principal.scopeType(),
                 AuditActions.LOGOUT, AuditActions.ENTITY_USER, principal.userId(), "SUCCESS"));
     }
@@ -167,13 +188,37 @@ public class AuthService {
             throw ApiException.badRequest("Current password is incorrect");
         }
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
-        // Invalidate all previously issued tokens and clear the bootstrap flag.
+        // Invalidate all previously issued access tokens and clear the bootstrap flag.
         user.setTokenVersion(user.getTokenVersion() + 1);
         user.setMustChangePassword(false);
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
+        // Revoke all outstanding refresh tokens for the user.
+        refreshTokenService.revokeAllForUser(user.getId());
+
         auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
                 AuditActions.PASSWORD_CHANGE, AuditActions.ENTITY_USER, user.getId(), "SUCCESS"));
+    }
+
+    /** Build the authenticated response (access + rotated refresh token + summary). */
+    private LoginResponse issueAuthenticatedResponse(AppUser user) {
+        IssuedToken access = jwtService.issueAccessToken(
+                user.getId(), user.getUsername(), user.getTokenVersion());
+        String refreshToken = refreshTokenService.issue(user);
+        return LoginResponse.authenticated(
+                access.token(),
+                refreshToken,
+                refreshTokenService.accessTokenExpiresInSeconds(),
+                user.isMustChangePassword(),
+                userSummary(user));
+    }
+
+    private UserSummary userSummary(AppUser user) {
+        return new UserSummary(
+                user.getId(),
+                user.getUsername(),
+                user.getScopeType().name(),
+                userRolesLookup.roleCodesForUser(user.getId()));
     }
 }

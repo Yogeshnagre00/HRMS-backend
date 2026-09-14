@@ -57,6 +57,7 @@ public class SecurityConfig {
                         // Public: authentication entry points.
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/mfa/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/refresh").permitAll()
                         // Public: liveness/health and API documentation.
                         .requestMatchers("/api/v1/health", "/actuator/health", "/actuator/health/**")
                             .permitAll()

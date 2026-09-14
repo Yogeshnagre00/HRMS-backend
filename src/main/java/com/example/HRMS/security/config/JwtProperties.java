@@ -21,6 +21,9 @@ public class JwtProperties {
     /** MFA challenge (pre-auth) token lifetime in minutes. */
     private long mfaChallengeMinutes = 5;
 
+    /** Refresh token lifetime in minutes (longer-lived than the access token). */
+    private long refreshTokenMinutes = 60 * 24 * 7; // 7 days
+
     public String getSecret() {
         return secret;
     }
@@ -43,5 +46,13 @@ public class JwtProperties {
 
     public void setMfaChallengeMinutes(long mfaChallengeMinutes) {
         this.mfaChallengeMinutes = mfaChallengeMinutes;
+    }
+
+    public long getRefreshTokenMinutes() {
+        return refreshTokenMinutes;
+    }
+
+    public void setRefreshTokenMinutes(long refreshTokenMinutes) {
+        this.refreshTokenMinutes = refreshTokenMinutes;
     }
 }

@@ -18,28 +18,49 @@ public final class AuthDtos {
             @NotBlank String password) {
     }
 
+    /** Compact identity summary returned with a successful authentication. */
+    public record UserSummary(
+            UUID id,
+            String username,
+            String scope,
+            List<String> roles) {
+    }
+
     /**
-     * Login result. When MFA is required, {@code status=MFA_REQUIRED} and a
-     * short-lived {@code mfaToken} is returned instead of an access token.
+     * Login/authentication result. When MFA is required, {@code status=MFA_REQUIRED}
+     * and a short-lived {@code mfaToken} is returned instead of tokens. On success,
+     * {@code accessToken} + {@code refreshToken} are returned with {@code tokenType}
+     * ("Bearer") and {@code expiresIn} (access-token lifetime in seconds).
      */
     public record LoginResponse(
             String status,
             String accessToken,
+            String refreshToken,
+            String tokenType,
+            long expiresIn,
             String mfaToken,
-            boolean mustChangePassword) {
+            boolean mustChangePassword,
+            UserSummary user) {
 
-        public static LoginResponse authenticated(String accessToken, boolean mustChangePassword) {
-            return new LoginResponse("AUTHENTICATED", accessToken, null, mustChangePassword);
+        public static LoginResponse authenticated(String accessToken, String refreshToken,
+                                                  long expiresIn, boolean mustChangePassword,
+                                                  UserSummary user) {
+            return new LoginResponse("AUTHENTICATED", accessToken, refreshToken, "Bearer",
+                    expiresIn, null, mustChangePassword, user);
         }
 
         public static LoginResponse mfaRequired(String mfaToken) {
-            return new LoginResponse("MFA_REQUIRED", null, mfaToken, false);
+            return new LoginResponse("MFA_REQUIRED", null, null, null, 0, mfaToken, false, null);
         }
     }
 
     public record MfaVerifyRequest(
             @NotBlank String mfaToken,
             @NotBlank String code) {
+    }
+
+    public record RefreshRequest(
+            @NotBlank String refreshToken) {
     }
 
     public record PasswordChangeRequest(

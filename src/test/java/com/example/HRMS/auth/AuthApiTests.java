@@ -53,6 +53,7 @@ class AuthApiTests {
         // Delete child rows that reference app_user before deleting users.
         jdbcTemplate.update("DELETE FROM audit_log");
         jdbcTemplate.update("DELETE FROM revoked_token");
+        jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
         jdbcTemplate.update("DELETE FROM user_role");
         userRepository.deleteAll();
@@ -190,6 +191,110 @@ class AuthApiTests {
                 .andReturn().getResponse().getContentAsString();
         String mfaToken = objectMapper.readTree(json).get("mfaToken").asString();
         mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + mfaToken))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // --- Refresh token (V0-003.4) ------------------------------------------
+
+    /** Perform a login and return the parsed response body. */
+    private JsonNode loginResponse(String username, String password) throws Exception {
+        String body = "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}";
+        String json = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType("application/json").content(body))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readTree(json);
+    }
+
+    @Test
+    void loginReturnsRefreshTokenAndMetadata() throws Exception {
+        JsonNode node = loginResponse("superadmin", "Str0ngPass!");
+        assertThat(node.get("accessToken").asString()).isNotBlank();
+        assertThat(node.get("refreshToken").asString()).isNotBlank();
+        assertThat(node.get("tokenType").asString()).isEqualTo("Bearer");
+        assertThat(node.get("expiresIn").asLong()).isPositive();
+        assertThat(node.get("user").get("username").asString()).isEqualTo("superadmin");
+        assertThat(node.get("user").get("scope").asString()).isEqualTo("PLATFORM");
+    }
+
+    @Test
+    void refreshReturnsNewTokensAndAccessTokenWorks() throws Exception {
+        String refreshToken = loginResponse("superadmin", "Str0ngPass!").get("refreshToken").asString();
+
+        String json = mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        JsonNode node = objectMapper.readTree(json);
+
+        String newAccess = node.get("accessToken").asString();
+        String newRefresh = node.get("refreshToken").asString();
+        assertThat(newAccess).isNotBlank();
+        assertThat(newRefresh).isNotBlank().isNotEqualTo(refreshToken);
+
+        mockMvc.perform(get("/api/v1/auth/me").header("Authorization", "Bearer " + newAccess))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void rotatedRefreshTokenIsSingleUse() throws Exception {
+        String refreshToken = loginResponse("superadmin", "Str0ngPass!").get("refreshToken").asString();
+
+        // First use succeeds (and rotates).
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isOk());
+
+        // Re-using the now-revoked token is rejected.
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshTokenIsRejectedAfterLogout() throws Exception {
+        JsonNode login = loginResponse("superadmin", "Str0ngPass!");
+        String access = login.get("accessToken").asString();
+        String refreshToken = login.get("refreshToken").asString();
+
+        mockMvc.perform(post("/api/v1/auth/logout")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void refreshTokenIsRejectedAfterPasswordChange() throws Exception {
+        JsonNode login = loginResponse("superadmin", "Str0ngPass!");
+        String access = login.get("accessToken").asString();
+        String refreshToken = login.get("refreshToken").asString();
+
+        mockMvc.perform(post("/api/v1/auth/password/change")
+                        .header("Authorization", "Bearer " + access)
+                        .contentType("application/json")
+                        .content("{\"currentPassword\":\"Str0ngPass!\",\"newPassword\":\"N3wStr0ngPass!\"}"))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"" + refreshToken + "\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void invalidRefreshTokenIsUnauthorized() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/refresh")
+                        .contentType("application/json")
+                        .content("{\"refreshToken\":\"not-a-real-token\"}"))
                 .andExpect(status().isUnauthorized());
     }
 }

@@ -5,6 +5,7 @@ import com.example.HRMS.auth.dto.AuthDtos.LoginResponse;
 import com.example.HRMS.auth.dto.AuthDtos.MeResponse;
 import com.example.HRMS.auth.dto.AuthDtos.MfaVerifyRequest;
 import com.example.HRMS.auth.dto.AuthDtos.PasswordChangeRequest;
+import com.example.HRMS.auth.dto.AuthDtos.RefreshRequest;
 import com.example.HRMS.auth.service.AuthService;
 import com.example.HRMS.security.core.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,15 +46,26 @@ public class AuthController {
 
     @PostMapping("/mfa/verify")
     @Operation(summary = "Complete MFA challenge",
-            description = "Verifies the MFA code for a challenge token and returns an access token.")
+            description = "Verifies the MFA code for a challenge token and returns access + refresh tokens.")
     public ResponseEntity<LoginResponse> verifyMfa(@Valid @RequestBody MfaVerifyRequest request) {
         return ResponseEntity.ok(authService.verifyMfa(request));
     }
 
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh access token",
+            description = "Exchanges a valid refresh token for a new access token and a rotated "
+                    + "refresh token. The presented refresh token is single-use.")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request.refreshToken()));
+    }
+
     @PostMapping("/logout")
-    @Operation(summary = "Terminate authenticated session/token")
-    public ResponseEntity<Void> logout(HttpServletRequest request) {
-        authService.logout(currentUser.require(), bearerToken(request));
+    @Operation(summary = "Terminate authenticated session/token",
+            description = "Revokes the current access token and, if provided, the refresh token.")
+    public ResponseEntity<Void> logout(HttpServletRequest request,
+                                       @RequestBody(required = false) RefreshRequest body) {
+        String refreshToken = body != null ? body.refreshToken() : null;
+        authService.logout(currentUser.require(), bearerToken(request), refreshToken);
         return ResponseEntity.noContent().build();
     }
 

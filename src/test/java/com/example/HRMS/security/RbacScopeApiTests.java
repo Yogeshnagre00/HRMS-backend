@@ -64,6 +64,7 @@ class RbacScopeApiTests {
         // test classes on the shared in-memory database) in FK-safe order.
         jdbcTemplate.update("DELETE FROM audit_log");
         jdbcTemplate.update("DELETE FROM revoked_token");
+        jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
         jdbcTemplate.update("DELETE FROM legal_entity");
         userRoleRepository.deleteAll();

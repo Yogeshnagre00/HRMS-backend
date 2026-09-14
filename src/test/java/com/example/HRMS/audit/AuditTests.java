@@ -49,6 +49,7 @@ class AuditTests {
     void setUp() {
         auditLogRepository.deleteAll();
         jdbcTemplate.update("DELETE FROM revoked_token");
+        jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
         jdbcTemplate.update("DELETE FROM user_role");
         userRepository.deleteAll();
