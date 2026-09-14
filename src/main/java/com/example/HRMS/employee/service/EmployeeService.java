@@ -84,10 +84,20 @@ public class EmployeeService {
 
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployee(AuthenticatedUser actor, UUID id) {
+        return toResponse(resolveScopedEmployee(actor, id));
+    }
+
+    /**
+     * Resolve an employee that the caller is permitted to access, enforcing
+     * company isolation, or throw 404 (no cross-company disclosure). Exposed as
+     * an application-service collaboration point for sibling employee-owned
+     * modules (e.g. bank details) so they reuse one scope-resolution path.
+     */
+    @Transactional(readOnly = true)
+    public Employee resolveScopedEmployee(AuthenticatedUser actor, UUID id) {
         LegalEntity legalEntity = resolveScopedLegalEntity(actor);
-        Employee employee = employeeRepository.findByIdAndLegalEntityId(id, legalEntity.getId())
+        return employeeRepository.findByIdAndLegalEntityId(id, legalEntity.getId())
                 .orElseThrow(() -> ApiException.notFound(ApiMessages.EMPLOYEE_NOT_FOUND));
-        return toResponse(employee);
     }
 
     @Transactional(readOnly = true)

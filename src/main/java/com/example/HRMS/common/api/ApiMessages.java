@@ -90,6 +90,10 @@ public final class ApiMessages {
     public static final String EMPLOYEE_EXIT_BEFORE_JOINING =
             "exitDate must be on or after joiningDate";
 
+    // --- Employee bank account -------------------------------------------
+    public static final String BANK_ACCOUNT_NOT_FOUND =
+            "Bank details have not been set for the employee";
+
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";
 
