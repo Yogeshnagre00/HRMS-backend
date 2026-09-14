@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -56,6 +57,31 @@ public class GlobalExceptionHandler {
                 path(request),
                 violations);
         return ResponseEntity.badRequest().body(body);
+    }
+
+    /** Application exceptions carrying an explicit HTTP status and safe message. */
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiError> handleApiException(ApiException ex, WebRequest request) {
+        ApiError body = ApiError.of(
+                ex.getStatus().value(),
+                ex.getStatus().getReasonPhrase(),
+                ex.getMessage(),
+                path(request));
+        return ResponseEntity.status(ex.getStatus()).body(body);
+    }
+
+    /**
+     * Authorization denials from method security ({@code @PreAuthorize}) for an
+     * already-authenticated user map to 403 (not the generic 500 fallback).
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
+        ApiError body = ApiError.of(
+                HttpStatus.FORBIDDEN.value(),
+                HttpStatus.FORBIDDEN.getReasonPhrase(),
+                "You do not have permission to perform this action",
+                path(request));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 
     /** Generic fallback so unexpected errors still use the common contract. */

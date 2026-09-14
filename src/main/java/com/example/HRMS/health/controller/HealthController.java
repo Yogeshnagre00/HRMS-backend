@@ -1,4 +1,4 @@
-package com.example.HRMS.health;
+package com.example.HRMS.health.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

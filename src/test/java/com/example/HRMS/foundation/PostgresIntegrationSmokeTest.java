@@ -57,6 +57,15 @@ class PostgresIntegrationSmokeTest {
             "work_calendar",
             "work_calendar_assignment");
 
+    private static final List<String> AUTH_RBAC_TABLES = List.of(
+            "app_user",
+            "role",
+            "permission",
+            "role_permission",
+            "user_role",
+            "revoked_token",
+            "audit_log");
+
     @Autowired
     private DataSource dataSource;
 
@@ -88,28 +97,29 @@ class PostgresIntegrationSmokeTest {
     }
 
     @Test
-    void flywayV1AndV2AreApplied() {
+    void flywayMigrationsAreApplied() {
         MigrationInfo[] applied = flyway.info().applied();
 
         List<String> appliedVersions = Arrays.stream(applied)
                 .filter(info -> info.getVersion() != null)
                 .map(info -> info.getVersion().getVersion())
                 .toList();
-        assertThat(appliedVersions).contains("1", "2");
+        // V1/V2 (foundation) and V3/V4 (auth/RBAC/audit + seed).
+        assertThat(appliedVersions).contains("1", "2", "3", "4");
 
         assertThat(applied)
-                .filteredOn(info -> info.getVersion() != null
-                        && ("1".equals(info.getVersion().getVersion())
-                        || "2".equals(info.getVersion().getVersion())))
+                .filteredOn(info -> info.getVersion() != null)
                 .allSatisfy(info ->
                         assertThat(info.getState()).isEqualTo(MigrationState.SUCCESS));
     }
 
     @Test
-    void allSixV0002TablesExist() throws Exception {
+    void allExpectedTablesExist() throws Exception {
+        List<String> allTables = new java.util.ArrayList<>(EXPECTED_TABLES);
+        allTables.addAll(AUTH_RBAC_TABLES);
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData meta = connection.getMetaData();
-            for (String table : EXPECTED_TABLES) {
+            for (String table : allTables) {
                 try (ResultSet rs = meta.getTables(null, null, table, new String[] {"TABLE"})) {
                     assertThat(rs.next())
                             .as("table %s should exist in the hrms database", table)
@@ -117,5 +127,28 @@ class PostgresIntegrationSmokeTest {
                 }
             }
         }
+    }
+
+    @Test
+    void rbacSeedIsPresent() {
+        Integer roles = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM role WHERE code IN "
+                        + "('SUPER_ADMIN','COMPANY_ADMIN','PAYROLL_ADMIN','EMPLOYEE','MANAGER')",
+                Integer.class);
+        assertThat(roles).isEqualTo(5);
+
+        Integer permissions = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM permission", Integer.class);
+        assertThat(permissions).isGreaterThanOrEqualTo(9);
+
+        Integer mappings = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM role_permission", Integer.class);
+        assertThat(mappings).isGreaterThan(0);
+
+        // Reserved roles must not be assignable and must have no permissions.
+        Integer reservedAssignable = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM role WHERE code IN ('EMPLOYEE','MANAGER') AND assignable = TRUE",
+                Integer.class);
+        assertThat(reservedAssignable).isZero();
     }
 }

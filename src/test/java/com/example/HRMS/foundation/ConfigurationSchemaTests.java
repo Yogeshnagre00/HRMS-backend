@@ -16,15 +16,20 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Proves the V0-002 configuration/master-data schema was created by Flyway with
  * the expected tables, primary keys, foreign keys, NOT NULL and CHECK (enum
  * domain) constraints. Metadata assertions confirm structure; behavioural
  * assertions confirm the constraints are actually enforced by the database.
+ *
+ * <p>{@code @Transactional} rolls back the rows inserted by the behavioural
+ * tests so they do not leak into other test classes on the shared in-memory DB.
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Transactional
 class ConfigurationSchemaTests {
 
     private static final List<String> EXPECTED_TABLES = List.of(
@@ -115,11 +120,20 @@ class ConfigurationSchemaTests {
         String entityId = UUID.randomUUID().toString();
         String ruleSetId = UUID.randomUUID().toString();
         String configId = UUID.randomUUID().toString();
+        String actorId = UUID.randomUUID().toString();
 
         jdbcTemplate.update(
                 "INSERT INTO company (id, name, status, created_at, updated_at) "
                         + "VALUES (?, 'Acme', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 companyId);
+        // created_by now references app_user (deferred FK finalised in V3).
+        jdbcTemplate.update(
+                "INSERT INTO app_user "
+                        + "(id, username, email, password_hash, status, scope_type, mfa_enabled, "
+                        + " token_version, created_at, updated_at) "
+                        + "VALUES (?, 'schema-actor', 'a@example.com', 'x', 'ACTIVE', 'PLATFORM', "
+                        + " FALSE, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                actorId);
         jdbcTemplate.update(
                 "INSERT INTO legal_entity "
                         + "(id, company_id, legal_name, country_code, pan, financial_year_start, "
@@ -140,7 +154,7 @@ class ConfigurationSchemaTests {
                         + " rule_version_set_id, created_by, created_at) "
                         + "VALUES (?, ?, DATE '2025-04-01', 'UNCONFIRMED', 'NEW_REGIME_AUTOMATIC_V0', "
                         + " ?, ?, CURRENT_TIMESTAMP)",
-                configId, entityId, ruleSetId, UUID.randomUUID().toString());
+                configId, entityId, ruleSetId, actorId);
 
         String stored = jdbcTemplate.queryForObject(
                 "SELECT pf_applicability FROM statutory_configuration WHERE id = ?",
