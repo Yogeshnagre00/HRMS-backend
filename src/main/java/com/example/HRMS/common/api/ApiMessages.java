@@ -94,6 +94,15 @@ public final class ApiMessages {
     public static final String BANK_ACCOUNT_NOT_FOUND =
             "Bank details have not been set for the employee";
 
+    // --- Employee opening tax state --------------------------------------
+    public static final String OPENING_TAX_STATE_NOT_FOUND =
+            "Opening tax state has not been set for the employee for the current financial year";
+    public static final String OPENING_TAX_STATE_INCOMPLETE =
+            "Both cumulativeTaxableIncome and tdsAlreadyDeducted are required to create "
+                    + "the opening tax state";
+    public static final String OPENING_TAX_STATE_CONFLICT =
+            "Opening tax state already exists for the employee and financial year";
+
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";
 

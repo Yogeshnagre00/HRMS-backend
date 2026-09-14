@@ -34,10 +34,15 @@ public final class AuditActions {
     public static final String BANK_ACCOUNT_CREATED = "BANK_ACCOUNT_CREATED";
     public static final String BANK_ACCOUNT_UPDATED = "BANK_ACCOUNT_UPDATED";
 
+    // Employee opening tax state (V2-003)
+    public static final String OPENING_TAX_STATE_CREATED = "OPENING_TAX_STATE_CREATED";
+    public static final String OPENING_TAX_STATE_UPDATED = "OPENING_TAX_STATE_UPDATED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
     public static final String ENTITY_STATUTORY_CONFIGURATION = "statutory_configuration";
     public static final String ENTITY_EMPLOYEE = "employee";
     public static final String ENTITY_EMPLOYEE_BANK_ACCOUNT = "employee_bank_account";
+    public static final String ENTITY_EMPLOYEE_OPENING_TAX_STATE = "employee_opening_tax_state";
 }
