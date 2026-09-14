@@ -31,8 +31,9 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException {
         ApiError body = ApiError.of(
                 HttpStatus.UNAUTHORIZED.value(),
+                com.example.HRMS.common.api.ApiErrorCode.UNAUTHORIZED,
                 HttpStatus.UNAUTHORIZED.getReasonPhrase(),
-                "Authentication is required to access this resource",
+                com.example.HRMS.common.api.ApiMessages.AUTH_REQUIRED_TO_ACCESS,
                 request.getRequestURI());
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

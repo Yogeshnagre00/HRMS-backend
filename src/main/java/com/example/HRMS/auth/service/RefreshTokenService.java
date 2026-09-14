@@ -6,6 +6,7 @@ import com.example.HRMS.auth.entity.UserStatus;
 import com.example.HRMS.auth.repository.AppUserRepository;
 import com.example.HRMS.auth.repository.RefreshTokenRepository;
 import com.example.HRMS.common.api.ApiException;
+import com.example.HRMS.common.api.ApiMessages;
 import com.example.HRMS.security.config.JwtProperties;
 import com.example.HRMS.security.core.JwtService;
 import com.example.HRMS.security.core.JwtService.IssuedToken;
@@ -73,21 +74,21 @@ public class RefreshTokenService {
     public RotationResult rotate(String presentedToken) {
         LocalDateTime now = LocalDateTime.now();
         RefreshToken existing = refreshTokenRepository.findById(presentedToken)
-                .orElseThrow(() -> ApiException.unauthorized("Invalid refresh token"));
+                .orElseThrow(() -> ApiException.unauthorized(ApiMessages.AUTH_REFRESH_TOKEN_INVALID));
 
         if (!existing.isActive(now)) {
-            throw ApiException.unauthorized("Refresh token is expired or revoked");
+            throw ApiException.unauthorized(ApiMessages.AUTH_REFRESH_TOKEN_EXPIRED_OR_REVOKED);
         }
 
         AppUser user = userRepository.findById(existing.getUserId())
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE)
-                .orElseThrow(() -> ApiException.unauthorized("Invalid refresh token"));
+                .orElseThrow(() -> ApiException.unauthorized(ApiMessages.AUTH_REFRESH_TOKEN_INVALID));
 
         if (existing.getTokenVersion() != user.getTokenVersion()) {
             // Password/security change invalidated this token; revoke and reject.
             existing.setRevokedAt(now);
             refreshTokenRepository.save(existing);
-            throw ApiException.unauthorized("Refresh token is no longer valid");
+            throw ApiException.unauthorized(ApiMessages.AUTH_REFRESH_TOKEN_NO_LONGER_VALID);
         }
 
         // Rotate: revoke the presented token, issue a new refresh token.

@@ -14,6 +14,7 @@ import com.example.HRMS.auth.entity.UserStatus;
 import com.example.HRMS.auth.repository.AppUserRepository;
 import com.example.HRMS.auth.service.RefreshTokenService.RotationResult;
 import com.example.HRMS.common.api.ApiException;
+import com.example.HRMS.common.api.ApiMessages;
 import com.example.HRMS.common.security.AuthenticatedUser;
 import com.example.HRMS.security.core.JwtService;
 import com.example.HRMS.security.core.JwtService.IssuedToken;
@@ -87,7 +88,7 @@ public class AuthService {
                     u.getId(), u.getCompanyId(), u.getScopeType(),
                     AuditActions.LOGIN_FAILURE, AuditActions.ENTITY_USER, u.getId(),
                     "FAILURE", "Invalid credentials or inactive account", null)));
-            throw ApiException.unauthorized("Invalid username or password");
+            throw ApiException.unauthorized(ApiMessages.AUTH_INVALID_CREDENTIALS);
         }
 
         AppUser user = maybeUser.get();
@@ -109,19 +110,19 @@ public class AuthService {
         try {
             parsed = jwtService.parse(request.mfaToken());
         } catch (Exception ex) {
-            throw ApiException.unauthorized("Invalid or expired MFA challenge");
+            throw ApiException.unauthorized(ApiMessages.AUTH_MFA_CHALLENGE_INVALID_OR_EXPIRED);
         }
         if (!JwtService.TYPE_MFA_CHALLENGE.equals(parsed.type())) {
-            throw ApiException.unauthorized("Invalid MFA challenge token");
+            throw ApiException.unauthorized(ApiMessages.AUTH_MFA_CHALLENGE_TOKEN_INVALID);
         }
         AppUser user = userRepository.findById(parsed.userId())
                 .filter(u -> u.getStatus() == UserStatus.ACTIVE)
-                .orElseThrow(() -> ApiException.unauthorized("Invalid MFA challenge"));
+                .orElseThrow(() -> ApiException.unauthorized(ApiMessages.AUTH_MFA_CHALLENGE_INVALID));
 
         if (!totpVerifier.verify(user.getMfaSecret(), request.code())) {
             auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
                     AuditActions.MFA_FAILURE, AuditActions.ENTITY_USER, user.getId(), "FAILURE"));
-            throw ApiException.unauthorized("Invalid MFA code");
+            throw ApiException.unauthorized(ApiMessages.AUTH_MFA_CODE_INVALID);
         }
 
         auditService.record(AuditEvent.of(user.getId(), user.getScopeType(),
@@ -182,10 +183,10 @@ public class AuthService {
     @Transactional
     public void changePassword(AuthenticatedUser principal, PasswordChangeRequest request) {
         AppUser user = userRepository.findById(principal.userId())
-                .orElseThrow(() -> ApiException.unauthorized("Authentication required"));
+                .orElseThrow(() -> ApiException.unauthorized(ApiMessages.AUTH_AUTHENTICATION_REQUIRED));
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
-            throw ApiException.badRequest("Current password is incorrect");
+            throw ApiException.badRequest(ApiMessages.AUTH_CURRENT_PASSWORD_INCORRECT);
         }
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         // Invalidate all previously issued access tokens and clear the bootstrap flag.

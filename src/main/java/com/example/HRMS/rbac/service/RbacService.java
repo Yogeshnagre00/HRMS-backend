@@ -6,6 +6,7 @@ import com.example.HRMS.audit.service.AuditService.AuditEvent;
 import com.example.HRMS.auth.entity.AppUser;
 import com.example.HRMS.auth.repository.AppUserRepository;
 import com.example.HRMS.common.api.ApiException;
+import com.example.HRMS.common.api.ApiMessages;
 import com.example.HRMS.common.security.AuthenticatedUser;
 import com.example.HRMS.rbac.dto.RbacDtos.AuthorizationMeResponse;
 import com.example.HRMS.rbac.dto.RbacDtos.PermissionResponse;
@@ -58,19 +59,28 @@ public class RbacService {
 
     @Transactional(readOnly = true)
     public List<RoleResponse> listRoles() {
-        return roleRepository.findAll().stream().map(RbacService::toRoleResponse).toList();
+        // Deterministic ordering by stable role code (no sort parameter is exposed;
+        // this is a small fixed reference collection).
+        return roleRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(Role::getCode))
+                .map(RbacService::toRoleResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
     public RoleResponse getRole(UUID roleId) {
         return roleRepository.findById(roleId)
                 .map(RbacService::toRoleResponse)
-                .orElseThrow(() -> ApiException.notFound("Role not found"));
+                .orElseThrow(() -> ApiException.notFound(ApiMessages.ROLE_NOT_FOUND));
     }
 
     @Transactional(readOnly = true)
     public List<PermissionResponse> listPermissions() {
+        // Deterministic ordering by stable permission code (small fixed reference
+        // collection; no sort parameter is exposed).
         return permissionRepository.findAll().stream()
+                .sorted(java.util.Comparator.comparing(
+                        com.example.HRMS.rbac.entity.Permission::getCode))
                 .map(p -> new PermissionResponse(p.getId(), p.getCode(), p.getDescription()))
                 .toList();
     }
@@ -93,15 +103,15 @@ public class RbacService {
         AppUser target = loadUserInScope(actor, userId);
         List<Role> roles = roleRepository.findAllById(roleIds);
         if (roles.size() != roleIds.stream().distinct().count()) {
-            throw ApiException.badRequest("One or more role ids are invalid");
+            throw ApiException.badRequest(ApiMessages.VALIDATION_ROLE_IDS_INVALID);
         }
         for (Role role : roles) {
             if (!role.isAssignable()) {
-                throw ApiException.badRequest("Role '" + role.getCode() + "' is reserved and not assignable");
+                throw ApiException.badRequest(ApiMessages.roleNotAssignable(role.getCode()));
             }
             // Only a platform actor may grant the platform SUPER_ADMIN role.
             if (SUPER_ADMIN_CODE.equals(role.getCode()) && !actor.isPlatform()) {
-                throw ApiException.forbidden("Only a platform administrator may assign SUPER_ADMIN");
+                throw ApiException.forbidden(ApiMessages.AUTHORIZATION_SUPER_ADMIN_PLATFORM_ONLY);
             }
         }
         userRoleRepository.deleteByUserId(target.getId());
@@ -130,11 +140,11 @@ public class RbacService {
      */
     private AppUser loadUserInScope(AuthenticatedUser actor, UUID userId) {
         AppUser target = userRepository.findById(userId)
-                .orElseThrow(() -> ApiException.notFound("User not found"));
+                .orElseThrow(() -> ApiException.notFound(ApiMessages.USER_NOT_FOUND));
         if (!actor.isPlatform()) {
             if (target.getCompanyId() == null || !target.getCompanyId().equals(actor.companyId())) {
                 // Do not disclose existence of out-of-scope resources.
-                throw ApiException.notFound("User not found");
+                throw ApiException.notFound(ApiMessages.USER_NOT_FOUND);
             }
         }
         return target;

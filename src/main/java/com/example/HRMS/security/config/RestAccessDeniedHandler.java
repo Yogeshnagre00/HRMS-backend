@@ -30,8 +30,9 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
                        AccessDeniedException accessDeniedException) throws IOException {
         ApiError body = ApiError.of(
                 HttpStatus.FORBIDDEN.value(),
+                com.example.HRMS.common.api.ApiErrorCode.FORBIDDEN,
                 HttpStatus.FORBIDDEN.getReasonPhrase(),
-                "You do not have permission to perform this action",
+                com.example.HRMS.common.api.ApiMessages.AUTHORIZATION_FORBIDDEN,
                 request.getRequestURI());
         response.setStatus(HttpStatus.FORBIDDEN.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

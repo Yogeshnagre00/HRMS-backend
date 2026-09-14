@@ -1,5 +1,6 @@
 package com.example.HRMS.security;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -134,7 +135,8 @@ class RbacScopeApiTests {
     @Test
     void unauthenticatedRequestToProtectedApiIs401() throws Exception {
         mockMvc.perform(get("/api/v1/roles"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("UNAUTHORIZED"));
     }
 
     // --- SEC-002 / missing permission ---
@@ -143,13 +145,26 @@ class RbacScopeApiTests {
         // PAYROLL_ADMIN has neither role.read nor user.read.
         mockMvc.perform(get("/api/v1/roles").header("Authorization", bearer("payadmin")))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.status").value(403));
+                .andExpect(jsonPath("$.status").value(403))
+                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }
 
     @Test
     void superAdminCanListRoles() throws Exception {
         mockMvc.perform(get("/api/v1/roles").header("Authorization", bearer("superadmin")))
                 .andExpect(status().isOk());
+    }
+
+    // --- deterministic ordering (audit dimension 19) ---
+    @Test
+    void listRolesIsDeterministicallyOrderedByCode() throws Exception {
+        String json = mockMvc.perform(get("/api/v1/roles")
+                        .header("Authorization", bearer("superadmin")))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        var codes = new java.util.ArrayList<String>();
+        objectMapper.readTree(json).forEach(node -> codes.add(node.get("code").asString()));
+        assertThat(codes).isSorted();
     }
 
     @Test

@@ -43,7 +43,10 @@ class GlobalExceptionHandlerTests {
                         .content("{\"name\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.error").value("Bad Request"))
+                // Top-level message comes from the centralized ApiMessages source.
+                .andExpect(jsonPath("$.message").value(ApiMessages.VALIDATION_FAILED_FIELDS))
                 .andExpect(jsonPath("$.path").value("/test-support/validate"))
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("name"))
                 .andExpect(jsonPath("$.fieldErrors[0].message").exists());

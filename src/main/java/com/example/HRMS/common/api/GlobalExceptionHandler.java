@@ -34,8 +34,9 @@ public class GlobalExceptionHandler {
 
         ApiError body = ApiError.of(
                 HttpStatus.BAD_REQUEST.value(),
+                ApiErrorCode.VALIDATION_ERROR,
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed for one or more fields",
+                ApiMessages.VALIDATION_FAILED_FIELDS,
                 path(request),
                 violations);
         return ResponseEntity.badRequest().body(body);
@@ -52,18 +53,20 @@ public class GlobalExceptionHandler {
 
         ApiError body = ApiError.of(
                 HttpStatus.BAD_REQUEST.value(),
+                ApiErrorCode.VALIDATION_ERROR,
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
-                "Validation failed for one or more parameters",
+                ApiMessages.VALIDATION_FAILED_PARAMETERS,
                 path(request),
                 violations);
         return ResponseEntity.badRequest().body(body);
     }
 
-    /** Application exceptions carrying an explicit HTTP status and safe message. */
+    /** Application exceptions carrying an explicit HTTP status, code and safe message. */
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiError> handleApiException(ApiException ex, WebRequest request) {
         ApiError body = ApiError.of(
                 ex.getStatus().value(),
+                ex.getCode(),
                 ex.getStatus().getReasonPhrase(),
                 ex.getMessage(),
                 path(request));
@@ -78,8 +81,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
         ApiError body = ApiError.of(
                 HttpStatus.FORBIDDEN.value(),
+                ApiErrorCode.FORBIDDEN,
                 HttpStatus.FORBIDDEN.getReasonPhrase(),
-                "You do not have permission to perform this action",
+                ApiMessages.AUTHORIZATION_FORBIDDEN,
                 path(request));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
@@ -89,8 +93,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleGeneric(Exception ex, WebRequest request) {
         ApiError body = ApiError.of(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                ApiErrorCode.INTERNAL_ERROR,
                 HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
-                "An unexpected error occurred",
+                ApiMessages.SYSTEM_UNEXPECTED_ERROR,
                 path(request));
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
