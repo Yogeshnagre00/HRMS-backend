@@ -63,6 +63,33 @@ public final class ApiMessages {
             "An active legal entity already exists for this company; "
                     + "v0 supports a single legal entity per company";
 
+    // --- Statutory Configuration -----------------------------------------
+    public static final String STATUTORY_CONFIG_NOT_FOUND =
+            "Statutory configuration has not been set for the legal entity";
+    public static final String STATUTORY_RULE_VERSION_SET_NOT_FOUND =
+            "Statutory rule version set was not found";
+    public static final String STATUTORY_RULE_VERSION_SET_REQUIRED =
+            "A valid statutory rule version set must be referenced";
+    public static final String STATUTORY_PF_REGISTRATION_REQUIRED =
+            "PF registration status is required when PF is applicable";
+    public static final String STATUTORY_PF_REGISTRATION_NOT_ALLOWED =
+            "PF registration details are only allowed when PF is applicable";
+    public static final String STATUTORY_EFFECTIVE_RANGE_INVALID =
+            "effectiveTo must be on or after effectiveFrom";
+
+    /** Names the unsupported PT state and the supported set (Business Rules §7.2). */
+    public static String ptStateUnsupported(String state) {
+        return "PT state '" + state + "' is not supported in v0; supported states are "
+                + "Maharashtra, Karnataka, Tamil Nadu, Telangana, West Bengal";
+    }
+
+    // --- Employee --------------------------------------------------------
+    public static final String EMPLOYEE_NOT_FOUND = "Employee was not found";
+    public static final String EMPLOYEE_ID_ALREADY_EXISTS =
+            "An employee with this Employee ID already exists in the legal entity";
+    public static final String EMPLOYEE_EXIT_BEFORE_JOINING =
+            "exitDate must be on or after joiningDate";
+
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";
 

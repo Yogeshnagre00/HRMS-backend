@@ -53,6 +53,23 @@ public class LegalEntityService {
                 .toList();
     }
 
+    /**
+     * Resolve the single active v0 legal entity for the current company.
+     *
+     * <p>Exposed as an application-service collaboration point for other modules
+     * (e.g. statutory configuration) so they need not reach into the company
+     * module's persistence. 404 if no company or active legal entity exists yet.
+     */
+    @Transactional(readOnly = true)
+    public LegalEntity resolveActiveLegalEntity() {
+        Company company = resolveCompany();
+        return legalEntityRepository
+                .findByCompanyIdOrderByLegalNameAsc(company.getId()).stream()
+                .filter(e -> e.getStatus() == CompanyStatus.ACTIVE)
+                .findFirst()
+                .orElseThrow(() -> ApiException.notFound(ApiMessages.LEGAL_ENTITY_NOT_FOUND));
+    }
+
     @Transactional(readOnly = true)
     public LegalEntityResponse getLegalEntity(UUID id) {
         return legalEntityRepository.findById(id)

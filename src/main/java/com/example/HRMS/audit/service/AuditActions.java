@@ -22,7 +22,17 @@ public final class AuditActions {
     public static final String LEGAL_ENTITY_CREATED = "LEGAL_ENTITY_CREATED";
     public static final String LEGAL_ENTITY_UPDATED = "LEGAL_ENTITY_UPDATED";
 
+    // Statutory configuration (V0-005)
+    public static final String STATUTORY_CONFIG_CREATED = "STATUTORY_CONFIG_CREATED";
+    public static final String STATUTORY_CONFIG_UPDATED = "STATUTORY_CONFIG_UPDATED";
+
+    // Employee master (V2-001)
+    public static final String EMPLOYEE_CREATED = "EMPLOYEE_CREATED";
+    public static final String EMPLOYEE_UPDATED = "EMPLOYEE_UPDATED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
+    public static final String ENTITY_STATUTORY_CONFIGURATION = "statutory_configuration";
+    public static final String ENTITY_EMPLOYEE = "employee";
 }

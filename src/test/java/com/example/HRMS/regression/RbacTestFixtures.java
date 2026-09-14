@@ -52,6 +52,8 @@ public class RbacTestFixtures {
         jdbcTemplate.update("DELETE FROM revoked_token");
         jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
+        jdbcTemplate.update("DELETE FROM statutory_rule_version_set");
+        jdbcTemplate.update("DELETE FROM employee");
         jdbcTemplate.update("DELETE FROM legal_entity");
         userRoleRepository.deleteAll();
         userRepository.deleteAll();
@@ -68,6 +70,48 @@ public class RbacTestFixtures {
                 "INSERT INTO company (id, name, status, created_at, updated_at) "
                         + "VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 id.toString(), name, status);
+        return id;
+    }
+
+    /** Insert an ACTIVE legal entity for the given company; returns its id. */
+    public UUID insertLegalEntity(UUID companyId, String legalName) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO legal_entity (id, company_id, legal_name, country_code, pan, "
+                        + "financial_year_start, status, created_at, updated_at) "
+                        + "VALUES (?, ?, ?, 'IN', 'AAACA1234A', DATE '2026-04-01', 'ACTIVE', "
+                        + "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                id.toString(), companyId.toString(), legalName);
+        return id;
+    }
+
+    /** Insert an employee directly for tests; returns its surrogate id. */
+    public UUID insertEmployee(UUID legalEntityId, String businessEmployeeId, String fullName) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO employee (id, legal_entity_id, employee_id, full_name, joining_date, "
+                        + "employment_type, pan, tax_regime, status, created_at, updated_at) "
+                        + "VALUES (?, ?, ?, ?, DATE '2026-04-01', 'FULL_TIME', 'AAAAA0000A', "
+                        + "'NEW_REGIME', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                id.toString(), legalEntityId.toString(), businessEmployeeId, fullName);
+        return id;
+    }
+
+    /**
+     * Insert a statutory rule version set for tests. The rule-version identifiers
+     * and source reference are non-authoritative TEST placeholders only — they
+     * are not verified statutory constants and never appear in production seeds.
+     */
+    public UUID insertRuleVersionSet(String status) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO statutory_rule_version_set (id, jurisdiction, pf_rule_version, "
+                        + "pt_rule_version, tds_rule_version, effective_from, effective_to, "
+                        + "source_reference, verified_at, status) "
+                        + "VALUES (?, 'IN', 'TEST-PF-0', 'TEST-PT-0', 'TEST-TDS-0', "
+                        + "DATE '2026-04-01', NULL, 'TEST-FIXTURE-NOT-AUTHORITATIVE', "
+                        + "CURRENT_TIMESTAMP, ?)",
+                id.toString(), status);
         return id;
     }
 
