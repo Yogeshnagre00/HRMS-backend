@@ -94,6 +94,12 @@ public final class ApiMessages {
     public static final String BANK_ACCOUNT_NOT_FOUND =
             "Bank details have not been set for the employee";
 
+    // --- Employee leave balance ------------------------------------------
+    public static final String LEAVE_BALANCE_NOT_FOUND =
+            "Leave balance has not been set for the employee for the current financial year";
+    public static final String LEAVE_BALANCE_CONFLICT =
+            "Leave balance already exists for the employee and financial year";
+
     // --- Employee opening tax state --------------------------------------
     public static final String OPENING_TAX_STATE_NOT_FOUND =
             "Opening tax state has not been set for the employee for the current financial year";
@@ -102,6 +108,37 @@ public final class ApiMessages {
                     + "the opening tax state";
     public static final String OPENING_TAX_STATE_CONFLICT =
             "Opening tax state already exists for the employee and financial year";
+
+    // --- Employee CSV validation (V2-005) --------------------------------
+    public static final String CSV_FILE_REQUIRED = "A CSV file is required";
+    public static final String CSV_FILE_EMPTY = "The uploaded CSV file is empty";
+    public static final String CSV_FILE_UNREADABLE = "The uploaded CSV file could not be read";
+    public static final String CSV_IMPORT_SESSION_NOT_FOUND = "Import session was not found";
+    public static final String CSV_HEADER_MISSING = "Required header is missing";
+    public static final String CSV_HEADER_UNKNOWN = "Unknown header is not allowed";
+    public static final String CSV_HEADER_DUPLICATE = "Duplicate header is not allowed";
+    public static final String CSV_HEADER_BLANK = "Blank header name is not allowed";
+    public static final String CSV_ROW_COLUMN_COUNT_MISMATCH =
+            "Row column count does not match the header";
+    public static final String CSV_REQUIRED_FIELD_MISSING = "Required value is missing";
+    public static final String CSV_DUPLICATE_EMPLOYEE_ID_IN_FILE =
+            "Duplicate Employee ID within the uploaded file";
+    public static final String CSV_INVALID_DATE = "Invalid date; expected format YYYY-MM-DD";
+    public static final String CSV_EXIT_BEFORE_JOINING = "Exit Date must be on or after Joining Date";
+    public static final String CSV_INVALID_PAN = "Invalid PAN format";
+    public static final String CSV_INVALID_TAX_REGIME = "Tax Regime must be NEW_REGIME or OLD_REGIME";
+    public static final String CSV_OLD_REGIME_TDS_UNSUPPORTED =
+            "Old Tax Regime is accepted for import, but automatic v0 TDS is unsupported "
+                    + "and will be surfaced as a blocking Health Check finding";
+    public static final String CSV_INVALID_AMOUNT = "Invalid monetary value";
+    public static final String CSV_NEGATIVE_AMOUNT = "Monetary value must be non-negative";
+    public static final String CSV_INVALID_QUANTITY = "Invalid numeric quantity";
+    public static final String CSV_NEGATIVE_QUANTITY = "Quantity must be non-negative";
+    public static final String CSV_INVALID_IFSC = "Invalid IFSC";
+    public static final String CSV_INVALID_ACCOUNT_NUMBER = "Invalid account number";
+    public static final String CSV_INVALID_PT_STATE =
+            "PT State is not supported in v0 (Maharashtra, Karnataka, Tamil Nadu, "
+                    + "Telangana, West Bengal)";
 
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";

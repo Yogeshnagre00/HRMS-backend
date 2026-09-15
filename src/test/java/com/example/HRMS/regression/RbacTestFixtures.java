@@ -53,6 +53,9 @@ public class RbacTestFixtures {
         jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
         jdbcTemplate.update("DELETE FROM statutory_rule_version_set");
+        jdbcTemplate.update("DELETE FROM import_session_row");
+        jdbcTemplate.update("DELETE FROM import_session");
+        jdbcTemplate.update("DELETE FROM employee_leave_balance");
         jdbcTemplate.update("DELETE FROM employee_opening_tax_state");
         jdbcTemplate.update("DELETE FROM employee_bank_account");
         jdbcTemplate.update("DELETE FROM employee");
