@@ -93,6 +93,36 @@ public class BankAccountService {
         return toResponse(account);
     }
 
+    /**
+     * Create the employee's bank account for an already-resolved employee as part
+     * of an atomic CSV import confirmation (V2-006). Reuses the v0 single-current
+     * primary-active account model: {@code primary=true}, {@code status=ACTIVE},
+     * {@code effective_from} = server business date. The account number is
+     * sensitive and never placed in audit metadata (the audit references the
+     * record id). The audit participates in the caller's transaction so it rolls
+     * back with a failed confirmation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public EmployeeBankAccount createFromImport(AuthenticatedUser actor, UUID employeeId,
+                                                String accountNumber, String ifsc) {
+        EmployeeBankAccount account = new EmployeeBankAccount();
+        account.setId(UUID.randomUUID());
+        account.setEmployeeId(employeeId);
+        account.setAccountNumber(accountNumber);
+        account.setIfsc(ifsc);
+        account.setAccountHolderName(null);
+        account.setPrimary(true);
+        account.setEffectiveFrom(LocalDate.now());
+        account.setEffectiveTo(null);
+        account.setStatus(BankAccountStatus.ACTIVE);
+        bankAccountRepository.save(account);
+        auditService.recordInTransaction(new AuditEvent(actor.userId(), actor.companyId(),
+                actor.scopeType(), AuditActions.BANK_ACCOUNT_CREATED,
+                AuditActions.ENTITY_EMPLOYEE_BANK_ACCOUNT, account.getId(),
+                "SUCCESS", null, null));
+        return account;
+    }
+
     private static BankAccountResponse toResponse(EmployeeBankAccount a) {
         return new BankAccountResponse(a.getId(), a.getEmployeeId(),
                 mask(a.getAccountNumber()), a.getIfsc(), a.getAccountHolderName(),

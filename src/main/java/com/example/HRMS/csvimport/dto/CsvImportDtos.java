@@ -36,4 +36,25 @@ public final class CsvImportDtos {
             int warningRows,
             List<ValidationIssue> issues) {
     }
+
+    /**
+     * Confirmation request (API §11.6). The body is optional: an empty body or
+     * {@code {"confirm": true}} both confirm. The client never resends the CSV or
+     * controls which rows are applied — confirmation operates on the persisted
+     * validation session. {@code confirm} is accepted but not required.
+     */
+    public record ConfirmImportRequest(Boolean confirm) {
+    }
+
+    /**
+     * Result of confirming an import session (API §11.6). Persistence entities are
+     * never exposed and no sensitive values (PAN, account number, salary) are
+     * included.
+     */
+    public record ConfirmImportResponse(
+            UUID importId,
+            String status,
+            int totalRowsApplied,
+            java.time.LocalDateTime confirmedAt) {
+    }
 }

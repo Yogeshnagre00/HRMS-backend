@@ -15,6 +15,7 @@ import com.example.HRMS.tax.dto.OpeningTaxStateDtos.PatchOpeningTaxStateRequest;
 import com.example.HRMS.tax.entity.EmployeeOpeningTaxState;
 import com.example.HRMS.tax.entity.OpeningTaxStateSource;
 import com.example.HRMS.tax.repository.EmployeeOpeningTaxStateRepository;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -80,6 +81,37 @@ public class OpeningTaxStateService {
         return repository.findByEmployeeIdAndFinancialYear(employee.getId(), currentFy)
                 .map(existing -> update(actor, existing, request))
                 .orElseGet(() -> create(actor, employee.getId(), currentFy, request));
+    }
+
+    /**
+     * Create the current-FY opening tax state for an already-resolved employee as
+     * part of an atomic CSV import confirmation (V2-006). {@code source} is
+     * {@code CSV_IMPORT}; the FY is server-derived (same resolver as the manual
+     * path). Both monetary values are required (no silent zero default). The
+     * audit participates in the caller's transaction so it rolls back with a
+     * failed confirmation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public EmployeeOpeningTaxState createFromImport(AuthenticatedUser actor, UUID employeeId,
+                                                    BigDecimal cumulativeTaxableIncome,
+                                                    BigDecimal tdsAlreadyDeducted) {
+        if (cumulativeTaxableIncome == null || tdsAlreadyDeducted == null) {
+            throw ApiException.badRequest(ApiMessages.OPENING_TAX_STATE_INCOMPLETE);
+        }
+        EmployeeOpeningTaxState state = new EmployeeOpeningTaxState();
+        state.setId(UUID.randomUUID());
+        state.setEmployeeId(employeeId);
+        state.setFinancialYear(resolveCurrentFinancialYear());
+        state.setCumulativeTaxableIncome(cumulativeTaxableIncome);
+        state.setTdsAlreadyDeducted(tdsAlreadyDeducted);
+        state.setSource(OpeningTaxStateSource.CSV_IMPORT);
+        state.setCreatedAt(LocalDateTime.now());
+        repository.save(state);
+        auditService.recordInTransaction(new AuditEvent(actor.userId(), actor.companyId(),
+                actor.scopeType(), AuditActions.OPENING_TAX_STATE_CREATED,
+                AuditActions.ENTITY_EMPLOYEE_OPENING_TAX_STATE, state.getId(),
+                "SUCCESS", null, null));
+        return state;
     }
 
     private OpeningTaxStateResponse create(AuthenticatedUser actor, UUID employeeId,

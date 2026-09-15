@@ -35,18 +35,31 @@ public class FinancialYearResolver {
 
     /**
      * Current FY key as {@code YYYY-YY}, given the legal entity's FY start date
-     * (only month/day are used).
+     * (only month/day are used). The current FY is the one containing the current
+     * business date (evaluated in {@code Asia/Kolkata}).
      */
     public String currentFinancialYear(LocalDate financialYearStart) {
         LocalDate businessDate = LocalDate.now(clock.withZone(BUSINESS_ZONE));
+        return financialYearFor(businessDate, financialYearStart);
+    }
+
+    /**
+     * FY key as {@code YYYY-YY} for the financial year containing an arbitrary
+     * date, given the legal entity's FY start (only month/day are used). This is
+     * the single FY-derivation rule; {@link #currentFinancialYear} is the
+     * special case where the date is today's business date. Used by payroll to
+     * derive the FY of a specific payroll month (which is not necessarily the
+     * current month) without introducing an alternate FY format or rule.
+     */
+    public String financialYearFor(LocalDate date, LocalDate financialYearStart) {
         MonthDay startMonthDay = MonthDay.of(
                 financialYearStart.getMonth(), financialYearStart.getDayOfMonth());
-        LocalDate startThisYear = businessDate.withMonth(startMonthDay.getMonthValue())
+        LocalDate startThisYear = date.withMonth(startMonthDay.getMonthValue())
                 .withDayOfMonth(startMonthDay.getDayOfMonth());
 
-        int startYear = businessDate.isBefore(startThisYear)
-                ? businessDate.getYear() - 1
-                : businessDate.getYear();
+        int startYear = date.isBefore(startThisYear)
+                ? date.getYear() - 1
+                : date.getYear();
         int endYear = startYear + 1;
         return String.format("%04d-%02d", startYear, endYear % 100);
     }

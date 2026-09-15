@@ -31,6 +31,24 @@ public class AuditService {
      */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void record(AuditEvent event) {
+        persist(event);
+    }
+
+    /**
+     * Record a material action that must share the caller's transaction so the
+     * audit entry is rolled back if the surrounding operation fails. Used for
+     * business-data creation events that must not survive a rollback (e.g. the
+     * V2-006 CSV import confirmation, where a failed confirmation must leave no
+     * misleading "created" audit for entities that were never committed). Unlike
+     * {@link #record(AuditEvent)}, this participates in the existing transaction
+     * (default propagation) rather than a new one.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public void recordInTransaction(AuditEvent event) {
+        persist(event);
+    }
+
+    private void persist(AuditEvent event) {
         AuditLog log = new AuditLog();
         log.setId(UUID.randomUUID());
         log.setActorUserId(event.actorUserId());

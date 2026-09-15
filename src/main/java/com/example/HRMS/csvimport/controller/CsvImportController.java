@@ -2,7 +2,10 @@ package com.example.HRMS.csvimport.controller;
 
 import com.example.HRMS.common.api.ApiException;
 import com.example.HRMS.common.api.ApiMessages;
+import com.example.HRMS.csvimport.dto.CsvImportDtos.ConfirmImportRequest;
+import com.example.HRMS.csvimport.dto.CsvImportDtos.ConfirmImportResponse;
 import com.example.HRMS.csvimport.dto.CsvImportDtos.ValidationResultResponse;
+import com.example.HRMS.csvimport.service.CsvImportConfirmationService;
 import com.example.HRMS.csvimport.service.CsvValidationService;
 import com.example.HRMS.security.core.CurrentUser;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,29 +19,34 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Employee CSV import API (API §11.1). V2-005 implements upload+validation
- * (`POST`) and validation-session retrieval (`GET`). Confirmation
- * (`POST .../confirm`) is intentionally NOT implemented (V2-006). Company-scoped,
- * reusing the {@code company.admin} permission. Thin controller; parsing,
- * validation, session persistence and isolation live in
- * {@link CsvValidationService}. No business data is created or modified.
+ * Employee CSV import API (API §11). V2-005 implements upload+validation
+ * (`POST`) and validation-session retrieval (`GET`); V2-006 implements
+ * confirmation (`POST .../{importId}/confirm`). Company-scoped, reusing the
+ * {@code company.admin} permission. Thin controller; parsing, validation,
+ * session persistence, isolation and confirmation orchestration live in the
+ * services. Confirmation is create-only and atomic (API §11.6).
  */
 @RestController
 @RequestMapping("/api/v1/employees/imports")
-@Tag(name = "Employee CSV Import", description = "Upload + validate an employee CSV (V2-005)")
+@Tag(name = "Employee CSV Import", description = "Upload, validate and confirm an employee CSV")
 public class CsvImportController {
 
     private final CsvValidationService service;
+    private final CsvImportConfirmationService confirmationService;
     private final CurrentUser currentUser;
 
-    public CsvImportController(CsvValidationService service, CurrentUser currentUser) {
+    public CsvImportController(CsvValidationService service,
+                               CsvImportConfirmationService confirmationService,
+                               CurrentUser currentUser) {
         this.service = service;
+        this.confirmationService = confirmationService;
         this.currentUser = currentUser;
     }
 
@@ -68,5 +76,19 @@ public class CsvImportController {
     @Operation(summary = "Read the validation result/status of an import session")
     public ResponseEntity<ValidationResultResponse> getSession(@PathVariable UUID importId) {
         return ResponseEntity.ok(service.getSession(currentUser.require(), importId));
+    }
+
+    @PostMapping("/{importId}/confirm")
+    @PreAuthorize("hasAuthority('company.admin')")
+    @Operation(summary = "Confirm a validated import session; atomically create the employees "
+            + "(create-only) and their opening state")
+    public ResponseEntity<ConfirmImportResponse> confirm(
+            @PathVariable UUID importId,
+            @RequestBody(required = false) ConfirmImportRequest request) {
+        // The confirmation body is optional (empty body or the documented
+        // { "confirm": true } shape). It carries no row-level control — the server
+        // confirms the persisted validation session — so its content is not used
+        // to alter behavior; it exists only to document the accepted request shape.
+        return ResponseEntity.ok(confirmationService.confirm(currentUser.require(), importId));
     }
 }

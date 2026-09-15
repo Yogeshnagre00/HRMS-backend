@@ -52,6 +52,7 @@ public class RbacTestFixtures {
         jdbcTemplate.update("DELETE FROM revoked_token");
         jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
+        jdbcTemplate.update("DELETE FROM payroll_run");
         jdbcTemplate.update("DELETE FROM statutory_rule_version_set");
         jdbcTemplate.update("DELETE FROM import_session_row");
         jdbcTemplate.update("DELETE FROM import_session");
@@ -101,6 +102,37 @@ public class RbacTestFixtures {
                         + "'NEW_REGIME', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
                 id.toString(), legalEntityId.toString(), businessEmployeeId, fullName);
         return id;
+    }
+
+    /**
+     * Insert an employee with explicit joining/exit dates (ISO {@code yyyy-MM-dd};
+     * exit may be null). Used by payroll employee-population boundary tests.
+     */
+    public UUID insertEmployeeWithPeriod(UUID legalEntityId, String businessEmployeeId,
+                                         String fullName, String joiningDate, String exitDate) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO employee (id, legal_entity_id, employee_id, full_name, joining_date, "
+                        + "exit_date, employment_type, pan, tax_regime, status, created_at, "
+                        + "updated_at) VALUES (?, ?, ?, ?, ?, ?, 'FULL_TIME', 'AAAAA0000A', "
+                        + "'NEW_REGIME', 'ACTIVE', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                id.toString(), legalEntityId.toString(), businessEmployeeId, fullName,
+                joiningDate, exitDate);
+        return id;
+    }
+
+    /** The id of the single ACTIVE company (created via API in tests). */
+    public UUID activeCompanyId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM company WHERE status = 'ACTIVE' ORDER BY created_at LIMIT 1",
+                UUID.class);
+    }
+
+    /** The id of the single ACTIVE legal entity (created via API in tests). */
+    public UUID activeLegalEntityId() {
+        return jdbcTemplate.queryForObject(
+                "SELECT id FROM legal_entity WHERE status = 'ACTIVE' ORDER BY created_at LIMIT 1",
+                UUID.class);
     }
 
     /**

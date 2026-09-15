@@ -123,6 +123,17 @@ public final class ApiMessages {
     public static final String CSV_FILE_EMPTY = "The uploaded CSV file is empty";
     public static final String CSV_FILE_UNREADABLE = "The uploaded CSV file could not be read";
     public static final String CSV_IMPORT_SESSION_NOT_FOUND = "Import session was not found";
+
+    // --- Employee CSV import confirmation (V2-006) -----------------------
+    public static final String CSV_IMPORT_NOT_VALIDATED =
+            "The import session is not in a confirmable state";
+    public static final String CSV_IMPORT_HAS_INVALID_ROWS =
+            "The import session has invalid rows and cannot be confirmed";
+    public static final String CSV_IMPORT_ALREADY_CONFIRMED =
+            "The import session has already been confirmed";
+    public static final String CSV_IMPORT_EMPLOYEE_ID_EXISTS =
+            "One or more Employee IDs in the import already exist and confirmation "
+                    + "is create-only; the entire import was rejected";
     public static final String CSV_HEADER_MISSING = "Required header is missing";
     public static final String CSV_HEADER_UNKNOWN = "Unknown header is not allowed";
     public static final String CSV_HEADER_DUPLICATE = "Duplicate header is not allowed";
@@ -148,6 +159,17 @@ public final class ApiMessages {
     public static final String CSV_INVALID_PT_STATE =
             "PT State is not supported in v0 (Maharashtra, Karnataka, Tamil Nadu, "
                     + "Telangana, West Bengal)";
+
+    // --- Payroll run (V2-007) --------------------------------------------
+    public static final String PAYROLL_RUN_NOT_FOUND = "Payroll run was not found";
+    public static final String PAYROLL_MONTH_NOT_FIRST_OF_MONTH =
+            "payrollMonth must be the first day of a calendar month (YYYY-MM-01)";
+    public static final String PAYROLL_RULE_VERSION_SET_NOT_FOUND =
+            "The referenced statutory rule version set was not found";
+    public static final String PAYROLL_RULE_VERSION_SET_NOT_VERIFIED =
+            "The referenced statutory rule version set is not verified and cannot be used";
+    public static final String PAYROLL_RUN_ALREADY_EXISTS =
+            "A payroll run already exists for this legal entity and payroll month";
 
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";

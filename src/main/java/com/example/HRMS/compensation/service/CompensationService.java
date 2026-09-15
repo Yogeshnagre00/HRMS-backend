@@ -93,6 +93,30 @@ public class CompensationService {
     }
 
     /**
+     * Create the first compensation record for an already-resolved employee as
+     * part of an atomic CSV import confirmation (V2-006). {@code source} is
+     * {@code CSV_IMPORT}. The employee is passed in (it was just created in the
+     * same transaction and is trivially in scope), so no re-resolution occurs.
+     * Reuses the same first-create rules as {@link #createFirst}: 409 if the
+     * employee already has any compensation. The audit participates in the
+     * caller's transaction so it rolls back with a failed confirmation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public CompensationRecord createFirstFromImport(AuthenticatedUser actor, UUID employeeId,
+                                                    CompensationRequest request) {
+        if (repository.existsByEmployeeId(employeeId)) {
+            throw ApiException.conflict(ApiMessages.COMPENSATION_ALREADY_EXISTS);
+        }
+        CompensationRecord record = newRecord(actor, employeeId, request,
+                CompensationSource.CSV_IMPORT);
+        repository.save(record);
+        auditService.recordInTransaction(new AuditEvent(actor.userId(), actor.companyId(),
+                actor.scopeType(), AuditActions.COMPENSATION_CREATED,
+                AuditActions.ENTITY_COMPENSATION_RECORD, record.getId(), "SUCCESS", null, null));
+        return record;
+    }
+
+    /**
      * Create a salary revision: close the current open-ended record and create a
      * new open-ended record, atomically. {@code source} is server-assigned MANUAL.
      */

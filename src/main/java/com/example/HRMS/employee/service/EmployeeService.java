@@ -82,6 +82,61 @@ public class EmployeeService {
         return toResponse(employee);
     }
 
+    /**
+     * Resolve the caller's active legal entity, enforcing company isolation.
+     * Exposed as a collaboration point for the V2-006 CSV import confirmation,
+     * which resolves scope once and then creates several employees + owned records
+     * in a single atomic transaction.
+     */
+    @Transactional(readOnly = true)
+    public LegalEntity resolveScopedLegalEntityForImport(AuthenticatedUser actor) {
+        return resolveScopedLegalEntity(actor);
+    }
+
+    /**
+     * Report whether an Employee ID already exists within a legal entity. Used by
+     * the V2-006 create-only confirmation to detect conflicts before persisting
+     * any business data (existing Employee ID blocks the entire import).
+     */
+    @Transactional(readOnly = true)
+    public boolean employeeIdExists(UUID legalEntityId, String employeeId) {
+        return employeeRepository.existsByLegalEntityIdAndEmployeeId(legalEntityId, employeeId);
+    }
+
+    /**
+     * Create an employee within an already-resolved legal entity as part of an
+     * atomic CSV import confirmation (V2-006). CSV confirmation is CREATE-ONLY:
+     * an existing Employee ID is a conflict (409) and never an update. Reuses the
+     * same employment-period validation, field mapping and uniqueness rule as
+     * {@link #createEmployee}. The audit participates in the caller's transaction
+     * so it rolls back with a failed confirmation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public Employee createEmployeeFromImport(AuthenticatedUser actor, LegalEntity legalEntity,
+                                             CreateEmployeeRequest request) {
+        validateEmploymentPeriod(request.joiningDate(), request.exitDate());
+        if (employeeRepository.existsByLegalEntityIdAndEmployeeId(
+                legalEntity.getId(), request.employeeId())) {
+            throw ApiException.conflict(ApiMessages.EMPLOYEE_ID_ALREADY_EXISTS);
+        }
+        Employee employee = new Employee();
+        employee.setId(UUID.randomUUID());
+        employee.setLegalEntityId(legalEntity.getId());
+        employee.setEmployeeId(request.employeeId());
+        applyMutableFields(employee, request.fullName(), request.joiningDate(), request.exitDate(),
+                request.employmentType(), request.department(), request.designation(),
+                request.location(), request.pan(), request.uan(), request.ptState(),
+                TaxRegime.valueOf(request.taxRegime()), EmployeeStatus.valueOf(request.status()));
+        LocalDateTime now = LocalDateTime.now();
+        employee.setCreatedAt(now);
+        employee.setUpdatedAt(now);
+        employeeRepository.save(employee);
+        auditService.recordInTransaction(new AuditEvent(actor.userId(), actor.companyId(),
+                actor.scopeType(), AuditActions.EMPLOYEE_CREATED, AuditActions.ENTITY_EMPLOYEE,
+                employee.getId(), "SUCCESS", null, null));
+        return employee;
+    }
+
     @Transactional(readOnly = true)
     public EmployeeResponse getEmployee(AuthenticatedUser actor, UUID id) {
         return toResponse(resolveScopedEmployee(actor, id));

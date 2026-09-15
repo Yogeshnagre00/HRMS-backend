@@ -115,6 +115,36 @@ public class LeaveBalanceService {
         return toResponse(balance);
     }
 
+    /**
+     * Create the current-FY paid-leave balance for an already-resolved employee
+     * as part of an atomic CSV import confirmation (V2-006). Reuses the same
+     * derivation as the manual set path: {@code leaveTreatment=PAID_LEAVE},
+     * {@code approvedAdditions=0}, {@code usedQuantity=0},
+     * {@code availableBalance=openingBalance}, FY server-derived. The audit
+     * participates in the caller's transaction so it rolls back with a failed
+     * confirmation.
+     */
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)
+    public EmployeeLeaveBalance createFromImport(AuthenticatedUser actor, UUID employeeId,
+                                                 BigDecimal openingBalance) {
+        EmployeeLeaveBalance balance = new EmployeeLeaveBalance();
+        balance.setId(UUID.randomUUID());
+        balance.setEmployeeId(employeeId);
+        balance.setFinancialYear(resolveCurrentFinancialYear());
+        balance.setLeaveTreatment(LeaveTreatment.PAID_LEAVE);
+        balance.setOpeningBalance(openingBalance);
+        balance.setApprovedAdditions(BigDecimal.ZERO);
+        balance.setUsedQuantity(BigDecimal.ZERO);
+        balance.setAvailableBalance(openingBalance);
+        balance.setUpdatedAt(LocalDateTime.now());
+        repository.save(balance);
+        auditService.recordInTransaction(new AuditEvent(actor.userId(), actor.companyId(),
+                actor.scopeType(), AuditActions.LEAVE_BALANCE_CREATED,
+                AuditActions.ENTITY_EMPLOYEE_LEAVE_BALANCE, balance.getId(),
+                "SUCCESS", null, null));
+        return balance;
+    }
+
     private String resolveCurrentFinancialYear() {
         LegalEntity legalEntity = legalEntityService.resolveActiveLegalEntity();
         return financialYearResolver.currentFinancialYear(legalEntity.getFinancialYearStart());
