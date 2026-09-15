@@ -14,10 +14,11 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
- * Verifies the V2-007 Payroll Run Foundation OpenAPI surface: exactly the
- * create/list/read endpoints exist and none of the later-slice endpoints
- * (calculate, recalculate, health-check, findings, approve, lock, correction,
- * outputs) are present.
+ * Verifies the payroll-run OpenAPI surface after V2-008A: the V2-007 Foundation
+ * (create/list/read) plus the V2-008A non-statutory calculation endpoints
+ * (calculate, recalculate, employee-result list + detail). Still-later-slice
+ * endpoints (health-check, findings, approve, lock, correction, outputs) must
+ * remain absent.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -48,13 +49,27 @@ class PayrollRunOpenApiTests {
         assertThat(run.has("patch")).isFalse();
         assertThat(run.has("delete")).isFalse();
 
-        // Later-slice endpoints must NOT exist yet.
-        assertThat(paths.has("/api/v1/payroll/runs/{runId}/calculate")).isFalse();
-        assertThat(paths.has("/api/v1/payroll/runs/{runId}/recalculate")).isFalse();
+        // V2-008A non-statutory calculation endpoints present.
+        JsonNode calculate = paths.get("/api/v1/payroll/runs/{runId}/calculate");
+        assertThat(calculate).as("calculate path present").isNotNull();
+        assertThat(calculate.has("post")).isTrue();
+
+        JsonNode recalculate = paths.get("/api/v1/payroll/runs/{runId}/recalculate");
+        assertThat(recalculate).as("recalculate path present").isNotNull();
+        assertThat(recalculate.has("post")).isTrue();
+
+        JsonNode employees = paths.get("/api/v1/payroll/runs/{runId}/employees");
+        assertThat(employees).as("employee-results path present").isNotNull();
+        assertThat(employees.has("get")).isTrue();
+
+        JsonNode employee = paths.get("/api/v1/payroll/runs/{runId}/employees/{employeeId}");
+        assertThat(employee).as("employee-result detail path present").isNotNull();
+        assertThat(employee.has("get")).isTrue();
+
+        // Still-later-slice endpoints must NOT exist yet.
         assertThat(paths.has("/api/v1/payroll/runs/{runId}/health-check")).isFalse();
         assertThat(paths.has("/api/v1/payroll/runs/{runId}/findings")).isFalse();
         assertThat(paths.has("/api/v1/payroll/runs/{runId}/approve")).isFalse();
         assertThat(paths.has("/api/v1/payroll/runs/{runId}/lock")).isFalse();
-        assertThat(paths.has("/api/v1/payroll/runs/{runId}/employees")).isFalse();
     }
 }

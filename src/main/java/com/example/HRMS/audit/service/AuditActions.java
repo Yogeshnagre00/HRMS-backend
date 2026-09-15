@@ -69,6 +69,14 @@ public final class AuditActions {
     public static final String LEAVE_ENTRY_CREATED = "LEAVE_ENTRY_CREATED";
     public static final String LEAVE_ENTRY_CANCELLED = "LEAVE_ENTRY_CANCELLED";
 
+    // Payroll-period inputs (V2-008A.6)
+    public static final String VARIABLE_EARNING_CREATED = "VARIABLE_EARNING_CREATED";
+    public static final String ARREAR_CREATED = "ARREAR_CREATED";
+
+    // Payroll calculation (V2-008A)
+    public static final String PAYROLL_CALCULATED = "PAYROLL_CALCULATED";
+    public static final String PAYROLL_RECALCULATED = "PAYROLL_RECALCULATED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
@@ -84,4 +92,6 @@ public final class AuditActions {
     public static final String ENTITY_WORK_CALENDAR_ASSIGNMENT = "work_calendar_assignment";
     public static final String ENTITY_ATTENDANCE_EXCEPTION = "attendance_exception";
     public static final String ENTITY_LEAVE_ENTRY = "leave_entry";
+    public static final String ENTITY_VARIABLE_EARNING = "variable_earning";
+    public static final String ENTITY_ARREAR = "arrear";
 }

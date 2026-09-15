@@ -53,6 +53,11 @@ class AuditTests {
         jdbcTemplate.update("DELETE FROM statutory_configuration");
         // Employee-owned tables that reference app_user (created_by/actor) must be
         // cleared before app_user, in FK-safe order.
+        jdbcTemplate.update("DELETE FROM variable_earning");
+        jdbcTemplate.update("DELETE FROM arrear");
+        jdbcTemplate.update("DELETE FROM payroll_day_result");
+        jdbcTemplate.update("DELETE FROM payroll_result_line");
+        jdbcTemplate.update("DELETE FROM payroll_employee_result");
         jdbcTemplate.update("DELETE FROM payroll_run");
         jdbcTemplate.update("DELETE FROM leave_entry");
         jdbcTemplate.update("DELETE FROM attendance_exception");

@@ -13,6 +13,7 @@ package com.example.HRMS.payroll.entity;
  */
 public enum PayrollRunStatus {
     DRAFT,
+    CALCULATED_PRE_STATUTORY,
     CALCULATED,
     HEALTH_CHECK,
     REVIEW,

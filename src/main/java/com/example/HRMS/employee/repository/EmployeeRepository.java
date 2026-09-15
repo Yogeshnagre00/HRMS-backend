@@ -38,4 +38,21 @@ public interface EmployeeRepository extends JpaRepository<Employee, UUID> {
     long countEligibleForPayrollMonth(java.util.UUID legalEntityId,
                                       java.time.LocalDate monthStart,
                                       java.time.LocalDate monthEnd);
+
+    /**
+     * All employees in a legal entity whose employment period intersects a
+     * payroll month window {@code [monthStart, monthEnd]} (inclusive), ordered by
+     * business Employee ID for deterministic payroll iteration. Used by the
+     * payroll calculation (V2-008A) to build the employee population.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+            SELECT e FROM Employee e
+            WHERE e.legalEntityId = :legalEntityId
+              AND e.joiningDate <= :monthEnd
+              AND (e.exitDate IS NULL OR e.exitDate >= :monthStart)
+            ORDER BY e.employeeId ASC, e.id ASC
+            """)
+    java.util.List<Employee> findEligibleForPayrollMonth(java.util.UUID legalEntityId,
+                                                         java.time.LocalDate monthStart,
+                                                         java.time.LocalDate monthEnd);
 }

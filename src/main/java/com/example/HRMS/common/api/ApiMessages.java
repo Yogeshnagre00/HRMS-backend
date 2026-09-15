@@ -175,6 +175,13 @@ public final class ApiMessages {
     public static final String WORK_CALENDAR_WRONG_LEGAL_ENTITY =
             "The work calendar does not belong to the employee's legal entity";
 
+    // --- Payroll-period inputs (V2-008A.6) -------------------------------
+    public static final String PAYROLL_INPUT_AMOUNT_NEGATIVE = "amount must be non-negative";
+    public static final String PAYROLL_INPUT_RUN_NOT_DRAFT =
+            "Payroll-period inputs can only be added while the payroll run is in DRAFT";
+    public static final String PAYROLL_INPUT_RUN_WRONG_LEGAL_ENTITY =
+            "The payroll run does not belong to the employee's legal entity";
+
     // --- Leave entry (V2-008A.5) -----------------------------------------
     public static final String LEAVE_ENTRY_NOT_FOUND = "Leave entry was not found";
     public static final String LEAVE_DATE_OUTSIDE_EMPLOYMENT =
@@ -209,6 +216,20 @@ public final class ApiMessages {
             "The referenced statutory rule version set is not verified and cannot be used";
     public static final String PAYROLL_RUN_ALREADY_EXISTS =
             "A payroll run already exists for this legal entity and payroll month";
+
+    // --- Payroll calculation (V2-008A) -----------------------------------
+    public static final String PAYROLL_RUN_NOT_CALCULABLE =
+            "Calculation is only allowed while the payroll run is in DRAFT";
+    public static final String PAYROLL_RUN_NOT_RECALCULABLE =
+            "Recalculation is only allowed while the payroll run is in CALCULATED_PRE_STATUTORY";
+    public static final String PAYROLL_CALC_MISSING_WORK_CALENDAR =
+            "A work calendar assignment covering the payroll month is required for the employee";
+    public static final String PAYROLL_CALC_MISSING_COMPENSATION =
+            "A compensation record covering the payroll month is required for the employee";
+    public static final String PAYROLL_CALC_LEAVE_ATTENDANCE_CONFLICT =
+            "A leave entry and an attendance exception exist for the same day for the employee";
+    public static final String PAYROLL_EMPLOYEE_RESULT_NOT_FOUND =
+            "No calculated result exists for the employee in this payroll run";
 
     // --- System ----------------------------------------------------------
     public static final String SYSTEM_UNEXPECTED_ERROR = "An unexpected error occurred";

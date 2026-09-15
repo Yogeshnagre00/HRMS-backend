@@ -20,4 +20,7 @@ public interface AttendanceExceptionRepository
 
     Optional<AttendanceException> findByEmployeeIdAndAttendanceDate(UUID employeeId,
                                                                     LocalDate attendanceDate);
+
+    /** All exceptions for an employee (read-only, for payroll calc). */
+    java.util.List<AttendanceException> findByEmployeeId(UUID employeeId);
 }

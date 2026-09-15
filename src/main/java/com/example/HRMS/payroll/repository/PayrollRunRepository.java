@@ -26,4 +26,15 @@ public interface PayrollRunRepository extends JpaRepository<PayrollRun, UUID> {
 
     boolean existsByLegalEntityIdAndPayrollMonthAndParentPayrollRunIdIsNull(
             UUID legalEntityId, LocalDate payrollMonth);
+
+    /**
+     * Pessimistic-write lock on the run row, used by calculate/recalculate
+     * (V2-008A) to serialize concurrent calculation and re-check status under
+     * the lock (API §16.2). Portable to H2 and PostgreSQL (SELECT ... FOR UPDATE).
+     */
+    @org.springframework.data.jpa.repository.Lock(
+            jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query(
+            "SELECT r FROM PayrollRun r WHERE r.id = :id AND r.legalEntityId = :legalEntityId")
+    Optional<PayrollRun> findByIdAndLegalEntityIdForUpdate(UUID id, UUID legalEntityId);
 }

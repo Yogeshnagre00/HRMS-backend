@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local environment / secrets (never commit real credentials) ###
+.env
+.env.local
+*.env
+!.env.example

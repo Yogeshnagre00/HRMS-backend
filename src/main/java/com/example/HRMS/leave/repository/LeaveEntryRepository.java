@@ -21,4 +21,7 @@ public interface LeaveEntryRepository extends JpaRepository<LeaveEntry, UUID> {
 
     Optional<LeaveEntry> findByEmployeeIdAndLeaveDateAndStatus(
             UUID employeeId, LocalDate leaveDate, LeaveEntryStatus status);
+
+    /** All entries for an employee in a given status (read-only, for payroll calc). */
+    java.util.List<LeaveEntry> findByEmployeeIdAndStatus(UUID employeeId, LeaveEntryStatus status);
 }

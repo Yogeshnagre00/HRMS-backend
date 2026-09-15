@@ -52,6 +52,11 @@ public class RbacTestFixtures {
         jdbcTemplate.update("DELETE FROM revoked_token");
         jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
+        jdbcTemplate.update("DELETE FROM variable_earning");
+        jdbcTemplate.update("DELETE FROM arrear");
+        jdbcTemplate.update("DELETE FROM payroll_day_result");
+        jdbcTemplate.update("DELETE FROM payroll_result_line");
+        jdbcTemplate.update("DELETE FROM payroll_employee_result");
         jdbcTemplate.update("DELETE FROM payroll_run");
         jdbcTemplate.update("DELETE FROM statutory_rule_version_set");
         jdbcTemplate.update("DELETE FROM import_session_row");
@@ -154,6 +159,134 @@ public class RbacTestFixtures {
                         + "DATE '2026-04-01', NULL, 'TEST-FIXTURE-NOT-AUTHORITATIVE', "
                         + "CURRENT_TIMESTAMP, ?)",
                 id.toString(), status);
+        return id;
+    }
+
+    /**
+     * Insert a PayrollRun directly for tests with an explicit status, so
+     * payroll-input lifecycle tests can exercise statuses not yet reachable
+     * through the public API. Uses a fixed payroll month/FY/calculation version.
+     */
+    public UUID insertPayrollRun(UUID legalEntityId, UUID ruleVersionSetId, UUID createdBy,
+                                 String status) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO payroll_run (id, legal_entity_id, payroll_month, financial_year, "
+                        + "status, calculation_version, rule_version_set_id, created_by, "
+                        + "created_at) VALUES (?, ?, DATE '2026-06-01', '2026-27', ?, '0', ?, ?, "
+                        + "CURRENT_TIMESTAMP)",
+                id.toString(), legalEntityId.toString(), status, ruleVersionSetId.toString(),
+                createdBy.toString());
+        return id;
+    }
+
+    /**
+     * Insert a PayrollRun for an explicit payroll month/FY (used by payroll
+     * calculation tests that need a specific month window). Status and version
+     * are given by the caller.
+     */
+    public UUID insertPayrollRun(UUID legalEntityId, UUID ruleVersionSetId, UUID createdBy,
+                                 String status, String payrollMonth, String financialYear,
+                                 String calculationVersion) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO payroll_run (id, legal_entity_id, payroll_month, financial_year, "
+                        + "status, calculation_version, rule_version_set_id, created_by, "
+                        + "created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                id.toString(), legalEntityId.toString(), payrollMonth, financialYear, status,
+                calculationVersion, ruleVersionSetId.toString(), createdBy.toString());
+        return id;
+    }
+
+    /** Insert a v0 standard 5-day work calendar (Mon-Fri worked, Sat/Sun off); returns id. */
+    public UUID insertWorkCalendar(UUID legalEntityId, String name, String effectiveFrom,
+                                   String effectiveTo) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO work_calendar (id, legal_entity_id, name, effective_from, "
+                        + "effective_to, monday_to_friday, saturday_sunday_weekly_off, status) "
+                        + "VALUES (?, ?, ?, ?, ?, TRUE, TRUE, 'ACTIVE')",
+                id.toString(), legalEntityId.toString(), name, effectiveFrom, effectiveTo);
+        return id;
+    }
+
+    /** Assign a work calendar to an employee for an effective range; returns id. */
+    public UUID insertWorkCalendarAssignment(UUID employeeId, UUID workCalendarId,
+                                             String effectiveFrom, String effectiveTo,
+                                             UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO work_calendar_assignment (id, employee_id, work_calendar_id, "
+                        + "effective_from, effective_to, created_by) VALUES (?, ?, ?, ?, ?, ?)",
+                id.toString(), employeeId.toString(), workCalendarId.toString(), effectiveFrom,
+                effectiveTo, createdBy.toString());
+        return id;
+    }
+
+    /** Insert an effective-dated compensation record; returns id. */
+    public UUID insertCompensation(UUID employeeId, String effectiveFrom, String effectiveTo,
+                                   String ctc, String basic, String hra, String other,
+                                   UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO compensation_record (id, employee_id, effective_from, effective_to, "
+                        + "ctc_monthly, basic_monthly, hra_monthly, other_fixed_allowances_monthly, "
+                        + "source, created_by, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MANUAL', ?, CURRENT_TIMESTAMP)",
+                id.toString(), employeeId.toString(), effectiveFrom, effectiveTo, ctc, basic, hra,
+                other, createdBy.toString());
+        return id;
+    }
+
+    /** Insert a RECORDED leave entry (treatment PAID_LEAVE or UNPAID_LOP_LEAVE); returns id. */
+    public UUID insertLeaveEntry(UUID employeeId, String leaveDate, String treatment,
+                                 String quantity, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO leave_entry (id, employee_id, leave_date, treatment, quantity, "
+                        + "status, created_by, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, 'RECORDED', ?, CURRENT_TIMESTAMP)",
+                id.toString(), employeeId.toString(), leaveDate, treatment, quantity,
+                createdBy.toString());
+        return id;
+    }
+
+    /** Insert an attendance exception (FULL_DAY_ABSENCE/HALF_DAY/LOP); returns id. */
+    public UUID insertAttendanceException(UUID employeeId, String attendanceDate, String type,
+                                          String quantity, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO attendance_exception (id, employee_id, attendance_date, "
+                        + "exception_type, quantity, created_by, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
+                id.toString(), employeeId.toString(), attendanceDate, type, quantity,
+                createdBy.toString());
+        return id;
+    }
+
+    /** Insert a variable earning for an employee + run; returns id. */
+    public UUID insertVariableEarning(UUID employeeId, UUID payrollRunId, String description,
+                                      String amount, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO variable_earning (id, employee_id, payroll_run_id, description, "
+                        + "amount, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, "
+                        + "CURRENT_TIMESTAMP)",
+                id.toString(), employeeId.toString(), payrollRunId.toString(), description, amount,
+                createdBy.toString());
+        return id;
+    }
+
+    /** Insert an arrear for an employee + run; returns id. */
+    public UUID insertArrear(UUID employeeId, UUID payrollRunId, String amount,
+                             String periodReference, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO arrear (id, employee_id, payroll_run_id, amount, period_reference, "
+                        + "reason, created_by, created_at) VALUES (?, ?, ?, ?, ?, 'revision', ?, "
+                        + "CURRENT_TIMESTAMP)",
+                id.toString(), employeeId.toString(), payrollRunId.toString(), amount,
+                periodReference, createdBy.toString());
         return id;
     }
 
