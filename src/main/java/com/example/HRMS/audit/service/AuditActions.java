@@ -55,6 +55,20 @@ public final class AuditActions {
     // Payroll run (V2-007)
     public static final String PAYROLL_RUN_CREATED = "PAYROLL_RUN_CREATED";
 
+    // Work Calendar + assignment (V2-008A.3)
+    public static final String WORK_CALENDAR_CREATED = "WORK_CALENDAR_CREATED";
+    public static final String WORK_CALENDAR_UPDATED = "WORK_CALENDAR_UPDATED";
+    public static final String WORK_CALENDAR_ASSIGNED = "WORK_CALENDAR_ASSIGNED";
+
+    // Attendance exception (V2-008A.4)
+    public static final String ATTENDANCE_EXCEPTION_CREATED = "ATTENDANCE_EXCEPTION_CREATED";
+    public static final String ATTENDANCE_EXCEPTION_UPDATED = "ATTENDANCE_EXCEPTION_UPDATED";
+    public static final String ATTENDANCE_EXCEPTION_DELETED = "ATTENDANCE_EXCEPTION_DELETED";
+
+    // Leave entry (V2-008A.5)
+    public static final String LEAVE_ENTRY_CREATED = "LEAVE_ENTRY_CREATED";
+    public static final String LEAVE_ENTRY_CANCELLED = "LEAVE_ENTRY_CANCELLED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
@@ -66,4 +80,8 @@ public final class AuditActions {
     public static final String ENTITY_IMPORT_SESSION = "import_session";
     public static final String ENTITY_COMPENSATION_RECORD = "compensation_record";
     public static final String ENTITY_PAYROLL_RUN = "payroll_run";
+    public static final String ENTITY_WORK_CALENDAR = "work_calendar";
+    public static final String ENTITY_WORK_CALENDAR_ASSIGNMENT = "work_calendar_assignment";
+    public static final String ENTITY_ATTENDANCE_EXCEPTION = "attendance_exception";
+    public static final String ENTITY_LEAVE_ENTRY = "leave_entry";
 }

@@ -160,6 +160,45 @@ public final class ApiMessages {
             "PT State is not supported in v0 (Maharashtra, Karnataka, Tamil Nadu, "
                     + "Telangana, West Bengal)";
 
+    // --- Work Calendar + assignment (V2-008A.3) --------------------------
+    public static final String WORK_CALENDAR_NOT_FOUND = "Work calendar was not found";
+    public static final String WORK_CALENDAR_EFFECTIVE_RANGE_INVALID =
+            "effectiveTo must be on or after effectiveFrom";
+    public static final String WORK_CALENDAR_UNSUPPORTED_PATTERN =
+            "v0 supports only the standard 5-day calendar: mondayToFriday and "
+                    + "saturdaySundayWeeklyOff must both be true";
+    public static final String WORK_CALENDAR_OVERLAP =
+            "The work calendar effective period overlaps an existing calendar for the legal entity";
+    public static final String WORK_CALENDAR_ASSIGNMENT_OVERLAP =
+            "The work calendar assignment effective period overlaps an existing assignment "
+                    + "for the employee";
+    public static final String WORK_CALENDAR_WRONG_LEGAL_ENTITY =
+            "The work calendar does not belong to the employee's legal entity";
+
+    // --- Leave entry (V2-008A.5) -----------------------------------------
+    public static final String LEAVE_ENTRY_NOT_FOUND = "Leave entry was not found";
+    public static final String LEAVE_DATE_OUTSIDE_EMPLOYMENT =
+            "leaveDate must fall within the employee's employment period";
+    public static final String LEAVE_ENTRY_QUANTITY_INVALID = "quantity must be 0.5 or 1.0";
+    public static final String LEAVE_ENTRY_DUPLICATE =
+            "A recorded leave entry already exists for this employee and date";
+    public static final String LEAVE_ENTRY_ATTENDANCE_CONFLICT =
+            "An attendance exception already exists for this employee and date";
+    public static final String LEAVE_ENTRY_INSUFFICIENT_BALANCE =
+            "Insufficient paid-leave balance for the requested leave";
+    public static final String LEAVE_ENTRY_ALREADY_CANCELLED =
+            "The leave entry is already cancelled";
+
+    // --- Attendance exception (V2-008A.4) --------------------------------
+    public static final String ATTENDANCE_EXCEPTION_NOT_FOUND =
+            "Attendance exception was not found";
+    public static final String ATTENDANCE_DATE_OUTSIDE_EMPLOYMENT =
+            "attendanceDate must fall within the employee's employment period";
+    public static final String ATTENDANCE_EXCEPTION_DUPLICATE =
+            "An attendance exception already exists for this employee and date";
+    public static final String ATTENDANCE_QUANTITY_INVALID =
+            "quantity must be 1.0 for FULL_DAY_ABSENCE, 0.5 for HALF_DAY, or 0.5/1.0 for LOP";
+
     // --- Payroll run (V2-007) --------------------------------------------
     public static final String PAYROLL_RUN_NOT_FOUND = "Payroll run was not found";
     public static final String PAYROLL_MONTH_NOT_FIRST_OF_MONTH =

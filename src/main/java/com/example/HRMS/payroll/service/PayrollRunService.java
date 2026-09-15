@@ -49,10 +49,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PayrollRunService {
 
     /**
-     * Initial calculation version for a freshly created DRAFT run. The Data Model
-     * requires the field to be present at creation but defines no value before a
-     * calculation has run; the calculation slice assigns real version identifiers
-     * when it produces results. "0" denotes "no calculation yet".
+     * Initial calculation version for a freshly created DRAFT run. Data Model
+     * 10.1 defines {@code "0"} as the reserved sentinel meaning "not yet
+     * calculated"; the first successful calculation replaces it with a real
+     * calculation-version identifier (scheme owned by the calculation slice).
+     * {@code "0"} is never a valid calculated version and the field is non-null.
      */
     private static final String INITIAL_CALCULATION_VERSION = "0";
 

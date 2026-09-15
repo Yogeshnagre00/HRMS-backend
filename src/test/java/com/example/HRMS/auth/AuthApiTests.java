@@ -55,8 +55,24 @@ class AuthApiTests {
         jdbcTemplate.update("DELETE FROM revoked_token");
         jdbcTemplate.update("DELETE FROM refresh_token");
         jdbcTemplate.update("DELETE FROM statutory_configuration");
+        // Employee-owned tables that reference app_user (created_by/actor) must be
+        // cleared before app_user, in FK-safe order.
+        jdbcTemplate.update("DELETE FROM payroll_run");
+        jdbcTemplate.update("DELETE FROM leave_entry");
+        jdbcTemplate.update("DELETE FROM attendance_exception");
+        jdbcTemplate.update("DELETE FROM work_calendar_assignment");
+        jdbcTemplate.update("DELETE FROM work_calendar");
+        jdbcTemplate.update("DELETE FROM compensation_record");
+        jdbcTemplate.update("DELETE FROM employee_leave_balance");
+        jdbcTemplate.update("DELETE FROM employee_opening_tax_state");
+        jdbcTemplate.update("DELETE FROM employee_bank_account");
+        jdbcTemplate.update("DELETE FROM import_session_row");
+        jdbcTemplate.update("DELETE FROM import_session");
+        jdbcTemplate.update("DELETE FROM employee");
+        jdbcTemplate.update("DELETE FROM legal_entity");
         jdbcTemplate.update("DELETE FROM user_role");
         userRepository.deleteAll();
+        jdbcTemplate.update("DELETE FROM company");
         platformUserId = createUser("superadmin", "Str0ngPass!", UserStatus.ACTIVE, false, null);
         createUser("disabled", "Str0ngPass!", UserStatus.DISABLED, false, null);
         // MFA user with a known TOTP secret (Base32 of "12345678901234567890").
