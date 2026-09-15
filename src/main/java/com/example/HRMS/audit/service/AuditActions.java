@@ -45,6 +45,10 @@ public final class AuditActions {
     // Employee CSV validation (V2-005)
     public static final String IMPORT_SESSION_VALIDATED = "IMPORT_SESSION_VALIDATED";
 
+    // Compensation (V2-006A)
+    public static final String COMPENSATION_CREATED = "COMPENSATION_CREATED";
+    public static final String COMPENSATION_REVISED = "COMPENSATION_REVISED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
@@ -54,4 +58,5 @@ public final class AuditActions {
     public static final String ENTITY_EMPLOYEE_OPENING_TAX_STATE = "employee_opening_tax_state";
     public static final String ENTITY_EMPLOYEE_LEAVE_BALANCE = "employee_leave_balance";
     public static final String ENTITY_IMPORT_SESSION = "import_session";
+    public static final String ENTITY_COMPENSATION_RECORD = "compensation_record";
 }

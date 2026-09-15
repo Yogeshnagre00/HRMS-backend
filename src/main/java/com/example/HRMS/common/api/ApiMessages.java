@@ -100,6 +100,15 @@ public final class ApiMessages {
     public static final String LEAVE_BALANCE_CONFLICT =
             "Leave balance already exists for the employee and financial year";
 
+    // --- Compensation (V2-006A) ------------------------------------------
+    public static final String COMPENSATION_NOT_FOUND = "Compensation record was not found";
+    public static final String COMPENSATION_ALREADY_EXISTS =
+            "A compensation record already exists for the employee; use a revision to change it";
+    public static final String COMPENSATION_NO_CURRENT_TO_REVISE =
+            "No current compensation exists to revise for the employee";
+    public static final String COMPENSATION_EFFECTIVE_DATE_OVERLAP =
+            "The revision effective date overlaps an existing compensation record";
+
     // --- Employee opening tax state --------------------------------------
     public static final String OPENING_TAX_STATE_NOT_FOUND =
             "Opening tax state has not been set for the employee for the current financial year";
