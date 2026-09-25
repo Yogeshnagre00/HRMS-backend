@@ -302,6 +302,57 @@ public class RbacTestFixtures {
         return id;
     }
 
+    /** Insert a PF statutory rule row (Phase 4 resolver tests); returns id. */
+    public UUID insertPfRule(UUID ruleVersionSetId, String jurisdiction, String effectiveFrom,
+                             String effectiveTo, String releaseStatus, String payload,
+                             UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO statutory_pf_rule (id, rule_version_set_id, rule_type, jurisdiction, "
+                        + "effective_from, effective_to, authority, source_document, source_url, "
+                        + "verification_date, release_status, rule_payload, created_by, created_at) "
+                        + "VALUES (?, ?, 'PF', ?, ?, ?, 'TEST-AUTH', 'TEST-DOC', 'https://test', "
+                        + "DATE '2026-06-29', ?, ?, ?, CURRENT_TIMESTAMP)",
+                id.toString(), ruleVersionSetId.toString(), jurisdiction, effectiveFrom,
+                effectiveTo, releaseStatus, payload, createdBy.toString());
+        return id;
+    }
+
+    /** Insert a PT statutory rule row for a state (Phase 4 resolver tests); returns id. */
+    public UUID insertPtRule(UUID ruleVersionSetId, String jurisdiction, String ptState,
+                             String periodicity, String effectiveFrom, String effectiveTo,
+                             String releaseStatus, String payload, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO statutory_pt_rule (id, rule_version_set_id, rule_type, jurisdiction, "
+                        + "pt_state, periodicity, effective_from, effective_to, authority, "
+                        + "source_document, source_url, verification_date, release_status, "
+                        + "rule_payload, created_by, created_at) "
+                        + "VALUES (?, ?, 'PT', ?, ?, ?, ?, ?, 'TEST-AUTH', 'TEST-DOC', "
+                        + "'https://test', DATE '2026-06-29', ?, ?, ?, CURRENT_TIMESTAMP)",
+                id.toString(), ruleVersionSetId.toString(), jurisdiction, ptState, periodicity,
+                effectiveFrom, effectiveTo, releaseStatus, payload, createdBy.toString());
+        return id;
+    }
+
+    /** Insert a TDS statutory rule row (Phase 4 resolver tests); returns id. */
+    public UUID insertTdsRule(UUID ruleVersionSetId, String jurisdiction, String financialYear,
+                              String effectiveFrom, String effectiveTo, String releaseStatus,
+                              String payload, UUID createdBy) {
+        UUID id = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO statutory_tds_rule (id, rule_version_set_id, rule_type, jurisdiction, "
+                        + "financial_year, tax_regime, effective_from, effective_to, authority, "
+                        + "source_document, source_url, verification_date, release_status, "
+                        + "rule_payload, created_by, created_at) "
+                        + "VALUES (?, ?, 'TDS', ?, ?, 'NEW_REGIME_AUTOMATIC_V0', ?, ?, "
+                        + "'TEST-AUTH', 'TEST-DOC', 'https://test', DATE '2026-06-29', ?, ?, ?, "
+                        + "CURRENT_TIMESTAMP)",
+                id.toString(), ruleVersionSetId.toString(), jurisdiction, financialYear,
+                effectiveFrom, effectiveTo, releaseStatus, payload, createdBy.toString());
+        return id;
+    }
+
     public UUID createUser(String username, ScopeType scope, UUID companyId, UserStatus status) {
         return createUser(username, scope, companyId, status, false, null, false);
     }
