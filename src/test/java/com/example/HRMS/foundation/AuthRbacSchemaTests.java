@@ -71,7 +71,8 @@ class AuthRbacSchemaTests {
 
     @Test
     void permissionCatalogueIsSeeded() {
-        assertThat(permissionRepository.count()).isEqualTo(9);
+        // 9 V4-seeded permissions + statutory.release added in V19 (Phase 2).
+        assertThat(permissionRepository.count()).isEqualTo(10);
     }
 
     @Test

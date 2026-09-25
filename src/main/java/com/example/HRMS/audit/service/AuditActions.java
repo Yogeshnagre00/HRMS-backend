@@ -77,6 +77,12 @@ public final class AuditActions {
     public static final String PAYROLL_CALCULATED = "PAYROLL_CALCULATED";
     public static final String PAYROLL_RECALCULATED = "PAYROLL_RECALCULATED";
 
+    // Statutory rule-value store (Phase 2)
+    public static final String STATUTORY_RULE_CREATED = "STATUTORY_RULE_CREATED";
+    public static final String STATUTORY_RULE_UPDATED = "STATUTORY_RULE_UPDATED";
+    public static final String STATUTORY_RULE_VERIFIED = "STATUTORY_RULE_VERIFIED";
+    public static final String STATUTORY_RULE_SUPERSEDED = "STATUTORY_RULE_SUPERSEDED";
+
     public static final String ENTITY_USER = "app_user";
     public static final String ENTITY_COMPANY = "company";
     public static final String ENTITY_LEGAL_ENTITY = "legal_entity";
@@ -94,4 +100,7 @@ public final class AuditActions {
     public static final String ENTITY_LEAVE_ENTRY = "leave_entry";
     public static final String ENTITY_VARIABLE_EARNING = "variable_earning";
     public static final String ENTITY_ARREAR = "arrear";
+    public static final String ENTITY_STATUTORY_PF_RULE = "statutory_pf_rule";
+    public static final String ENTITY_STATUTORY_PT_RULE = "statutory_pt_rule";
+    public static final String ENTITY_STATUTORY_TDS_RULE = "statutory_tds_rule";
 }

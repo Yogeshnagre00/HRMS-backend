@@ -77,6 +77,25 @@ public final class ApiMessages {
     public static final String STATUTORY_EFFECTIVE_RANGE_INVALID =
             "effectiveTo must be on or after effectiveFrom";
 
+    // --- Statutory rule-value store (Phase 2) ----------------------------
+    public static final String STATUTORY_RULE_NOT_FOUND = "Statutory rule was not found";
+    public static final String STATUTORY_RULE_NOT_DRAFT =
+            "Only a DRAFT statutory rule can be modified; VERIFIED/SUPERSEDED rules are immutable";
+    public static final String STATUTORY_RULE_ALREADY_EXISTS =
+            "A statutory rule of this type already exists for the rule version set";
+    public static final String STATUTORY_RULE_VERIFY_INCOMPLETE =
+            "The statutory rule cannot be verified: required rule values or source metadata "
+                    + "are missing";
+    public static final String STATUTORY_RULE_EFFECTIVE_RANGE_INVALID =
+            "effectiveTo must be on or after effectiveFrom";
+    public static final String STATUTORY_RULE_PERIOD_OVERLAP =
+            "The rule effective period overlaps an existing verified rule for the same "
+                    + "jurisdiction/state";
+    public static final String STATUTORY_RULE_NOT_VERIFIABLE_STATE =
+            "Only a DRAFT statutory rule can be verified";
+    public static final String STATUTORY_RULE_NOT_SUPERSEDABLE_STATE =
+            "Only a VERIFIED statutory rule can be superseded";
+
     /** Names the unsupported PT state and the supported set (Business Rules §7.2). */
     public static String ptStateUnsupported(String state) {
         return "PT state '" + state + "' is not supported in v0; supported states are "

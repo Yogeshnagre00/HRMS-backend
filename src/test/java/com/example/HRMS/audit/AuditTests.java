@@ -59,6 +59,10 @@ class AuditTests {
         jdbcTemplate.update("DELETE FROM payroll_result_line");
         jdbcTemplate.update("DELETE FROM payroll_employee_result");
         jdbcTemplate.update("DELETE FROM payroll_run");
+        jdbcTemplate.update("DELETE FROM statutory_pf_rule");
+        jdbcTemplate.update("DELETE FROM statutory_pt_rule");
+        jdbcTemplate.update("DELETE FROM statutory_tds_rule");
+        jdbcTemplate.update("DELETE FROM statutory_rule_version_set");
         jdbcTemplate.update("DELETE FROM leave_entry");
         jdbcTemplate.update("DELETE FROM attendance_exception");
         jdbcTemplate.update("DELETE FROM work_calendar_assignment");

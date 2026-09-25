@@ -51,6 +51,9 @@ public class CompensationRecord {
     @Column(name = "other_fixed_allowances_monthly", nullable = false)
     private BigDecimal otherFixedAllowancesMonthly;
 
+    @Column(name = "da_monthly", nullable = false)
+    private BigDecimal daMonthly;
+
     @Column(name = "reason")
     private String reason;
 
@@ -130,6 +133,14 @@ public class CompensationRecord {
 
     public void setOtherFixedAllowancesMonthly(BigDecimal otherFixedAllowancesMonthly) {
         this.otherFixedAllowancesMonthly = otherFixedAllowancesMonthly;
+    }
+
+    public BigDecimal getDaMonthly() {
+        return daMonthly;
+    }
+
+    public void setDaMonthly(BigDecimal daMonthly) {
+        this.daMonthly = daMonthly;
     }
 
     public String getReason() {

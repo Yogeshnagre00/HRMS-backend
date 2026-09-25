@@ -71,4 +71,108 @@ public final class StatutoryDtos {
             LocalDateTime verifiedAt,
             String status) {
     }
+
+    // --- Phase 2: versioned statutory rule-value store (SUPER_ADMIN) ---------
+
+    /**
+     * Create a DRAFT PF rule under a rule version set. {@code rulePayload} is the
+     * structured PF values as JSON (optional while DRAFT). Provenance/source
+     * fields are optional at DRAFT but required to VERIFY. No values are implied
+     * or defaulted by the server.
+     */
+    public record CreatePfRuleRequest(
+            @NotNull UUID ruleVersionSetId,
+            @NotNull @Size(max = 100) String jurisdiction,
+            @NotNull LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            @Size(max = 255) String authority,
+            @Size(max = 500) String sourceDocument,
+            @Size(max = 1000) String sourceUrl,
+            LocalDate verificationDate,
+            String rulePayload) {
+    }
+
+    /** Create a DRAFT PT rule for a state under a rule version set. */
+    public record CreatePtRuleRequest(
+            @NotNull UUID ruleVersionSetId,
+            @NotNull @Size(max = 100) String jurisdiction,
+            @NotNull @Pattern(regexp = "MAHARASHTRA|KARNATAKA|TAMIL_NADU|TELANGANA|WEST_BENGAL",
+                    message = "ptState must be one of the five supported states")
+            String ptState,
+            @Size(max = 100) String localBody,
+            @NotNull @Pattern(regexp = "MONTHLY|HALF_YEARLY",
+                    message = "periodicity must be MONTHLY or HALF_YEARLY")
+            String periodicity,
+            @NotNull LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            @Size(max = 255) String authority,
+            @Size(max = 500) String sourceDocument,
+            @Size(max = 1000) String sourceUrl,
+            LocalDate verificationDate,
+            String rulePayload) {
+    }
+
+    /** Create a DRAFT TDS rule (New Regime automatic v0) under a rule version set. */
+    public record CreateTdsRuleRequest(
+            @NotNull UUID ruleVersionSetId,
+            @NotNull @Size(max = 100) String jurisdiction,
+            @NotNull @Pattern(regexp = "\\d{4}-\\d{2}",
+                    message = "financialYear must be canonical YYYY-YY")
+            String financialYear,
+            @NotNull @Pattern(regexp = "NEW_REGIME_AUTOMATIC_V0",
+                    message = "taxRegime must be NEW_REGIME_AUTOMATIC_V0")
+            String taxRegime,
+            @NotNull LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            @Size(max = 255) String authority,
+            @Size(max = 500) String sourceDocument,
+            @Size(max = 1000) String sourceUrl,
+            LocalDate verificationDate,
+            String rulePayload) {
+    }
+
+    /**
+     * Update the mutable fields of a DRAFT rule (any type). Only permitted while
+     * the rule is DRAFT; VERIFIED/SUPERSEDED rules are immutable. Null fields are
+     * treated as "clear" for optional provenance; effectiveFrom is required.
+     */
+    public record UpdateDraftRuleRequest(
+            @NotNull LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            @Size(max = 255) String authority,
+            @Size(max = 500) String sourceDocument,
+            @Size(max = 1000) String sourceUrl,
+            LocalDate verificationDate,
+            String rulePayload) {
+    }
+
+    /**
+     * Read-only view of a single statutory rule value row (PF/PT/TDS). Common
+     * fields plus optional type-specific fields ({@code ptState}, {@code localBody},
+     * {@code periodicity}, {@code financialYear}, {@code taxRegime}). The raw
+     * {@code rulePayload} is returned so a release authority can review it.
+     */
+    public record StatutoryRuleResponse(
+            UUID id,
+            UUID ruleVersionSetId,
+            String ruleType,
+            String jurisdiction,
+            String ptState,
+            String localBody,
+            String periodicity,
+            String financialYear,
+            String taxRegime,
+            LocalDate effectiveFrom,
+            LocalDate effectiveTo,
+            String authority,
+            String sourceDocument,
+            String sourceUrl,
+            LocalDate verificationDate,
+            String releaseStatus,
+            String rulePayload,
+            UUID createdBy,
+            LocalDateTime createdAt,
+            UUID verifiedBy,
+            LocalDateTime verifiedAt) {
+    }
 }

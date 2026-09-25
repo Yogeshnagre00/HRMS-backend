@@ -102,7 +102,8 @@ class RbacRegressionTests {
         JsonNode arr = objectMapper.readTree(json);
         var codes = new ArrayList<String>();
         arr.forEach(n -> codes.add(n.get("code").asString()));
-        assertThat(codes).hasSize(9).isSorted();
+        // 9 V4-seeded permissions + statutory.release (V19, Phase 2) = 10.
+        assertThat(codes).hasSize(10).isSorted();
         // Response contract: id/code/description only.
         assertThat(arr.get(0).has("id")).isTrue();
         assertThat(arr.get(0).has("description")).isTrue();
