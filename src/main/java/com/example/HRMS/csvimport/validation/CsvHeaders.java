@@ -32,6 +32,7 @@ public final class CsvHeaders {
     public static final String CTC = "CTC";
     public static final String BASIC = "Basic";
     public static final String HRA = "HRA";
+    public static final String DEARNESS_ALLOWANCE = "Dearness Allowance";
     public static final String OTHER_ALLOWANCES = "Other Allowances";
     public static final String EFFECTIVE_DATE = "Effective Date";
     public static final String OPENING_LEAVE_BALANCE = "Opening Leave Balance";
@@ -41,7 +42,8 @@ public final class CsvHeaders {
             EMPLOYEE_ID, NAME, JOINING_DATE, EXIT_DATE, EMPLOYMENT_TYPE, DEPARTMENT,
             DESIGNATION, LOCATION, PAN, UAN, PT_STATE, TAX_REGIME,
             CUMULATIVE_TAXABLE_INCOME, TDS_ALREADY_DEDUCTED, ACCOUNT_NUMBER, IFSC,
-            CTC, BASIC, HRA, OTHER_ALLOWANCES, EFFECTIVE_DATE, OPENING_LEAVE_BALANCE);
+            CTC, BASIC, HRA, DEARNESS_ALLOWANCE, OTHER_ALLOWANCES, EFFECTIVE_DATE,
+            OPENING_LEAVE_BALANCE);
 
     /** 0-based index of a header in canonical order (for deterministic issue ordering). */
     public static int position(String header) {

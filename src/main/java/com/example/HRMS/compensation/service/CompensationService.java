@@ -159,6 +159,7 @@ public class CompensationService {
         record.setCtcMonthly(request.ctcMonthly());
         record.setBasicMonthly(request.basicMonthly());
         record.setHraMonthly(request.hraMonthly());
+        record.setDaMonthly(request.daMonthly());
         record.setOtherFixedAllowancesMonthly(request.otherFixedAllowancesMonthly());
         record.setReason(request.reason());
         record.setSource(source);
@@ -176,7 +177,7 @@ public class CompensationService {
     private static CompensationResponse toResponse(CompensationRecord c) {
         return new CompensationResponse(c.getId(), c.getEmployeeId(), c.getEffectiveFrom(),
                 c.getEffectiveTo(), c.getCtcMonthly(), c.getBasicMonthly(), c.getHraMonthly(),
-                c.getOtherFixedAllowancesMonthly(), c.getReason(),
+                c.getDaMonthly(), c.getOtherFixedAllowancesMonthly(), c.getReason(),
                 c.getSource() == null ? null : c.getSource().name(),
                 c.getCreatedBy(), c.getCreatedAt());
     }

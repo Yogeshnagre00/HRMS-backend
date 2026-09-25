@@ -102,6 +102,7 @@ public class PayrollCalculationService {
 
     private static final String COMPONENT_BASIC = "BASIC";
     private static final String COMPONENT_HRA = "HRA";
+    private static final String COMPONENT_DA = "DA";
     private static final String COMPONENT_OTHER_FIXED = "OTHER_FIXED_ALLOWANCES";
     private static final String SOURCE_COMPENSATION = "compensation_record";
     private static final String SOURCE_VARIABLE_EARNING = "variable_earning";
@@ -362,6 +363,7 @@ public class PayrollCalculationService {
         BigDecimal payableDays = BigDecimal.ZERO;
         BigDecimal proratedBasic = BigDecimal.ZERO;
         BigDecimal proratedHra = BigDecimal.ZERO;
+        BigDecimal proratedDa = BigDecimal.ZERO;
         BigDecimal proratedOther = BigDecimal.ZERO;
 
         List<PayrollDayResult> dayResults = new ArrayList<>();
@@ -401,10 +403,12 @@ public class PayrollCalculationService {
                 if (payableQuantity.signum() > 0) {
                     BigDecimal basicDaily = dailyRate(comp.getBasicMonthly(), calendarDaysInMonth);
                     BigDecimal hraDaily = dailyRate(comp.getHraMonthly(), calendarDaysInMonth);
+                    BigDecimal daDaily = dailyRate(comp.getDaMonthly(), calendarDaysInMonth);
                     BigDecimal otherDaily = dailyRate(
                             comp.getOtherFixedAllowancesMonthly(), calendarDaysInMonth);
                     proratedBasic = proratedBasic.add(basicDaily.multiply(payableQuantity));
                     proratedHra = proratedHra.add(hraDaily.multiply(payableQuantity));
+                    proratedDa = proratedDa.add(daDaily.multiply(payableQuantity));
                     proratedOther = proratedOther.add(otherDaily.multiply(payableQuantity));
                 }
             }
@@ -427,6 +431,7 @@ public class PayrollCalculationService {
         // Round each fixed component at the result boundary, then build lines.
         BigDecimal basicAmount = round(proratedBasic);
         BigDecimal hraAmount = round(proratedHra);
+        BigDecimal daAmount = round(proratedDa);
         BigDecimal otherAmount = round(proratedOther);
 
         List<PayrollResultLine> lines = new ArrayList<>();
@@ -436,6 +441,8 @@ public class PayrollCalculationService {
                 basicAmount, payableDays, calendarDaysInMonth));
         gross = gross.add(addFixedLine(lines, resultId, COMPONENT_HRA, "HRA",
                 hraAmount, payableDays, calendarDaysInMonth));
+        gross = gross.add(addFixedLine(lines, resultId, COMPONENT_DA, "Dearness Allowance",
+                daAmount, payableDays, calendarDaysInMonth));
         gross = gross.add(addFixedLine(lines, resultId, COMPONENT_OTHER_FIXED,
                 "Other Fixed Allowances", otherAmount, payableDays, calendarDaysInMonth));
 
@@ -467,7 +474,7 @@ public class PayrollCalculationService {
         result.setPayableCalendarDays(roundDays(payableDays));
         result.setManualTds(false);
         result.setCalculationExplanation(explanationJson(run, eligibleDays, lopDays, payableDays,
-                calendarDaysInMonth, basicAmount, hraAmount, otherAmount, gross));
+                calendarDaysInMonth, basicAmount, hraAmount, daAmount, otherAmount, gross));
         result.setResultStatus(PayrollResultStatus.VALID);
         result.setCreatedAt(LocalDateTime.now());
 
@@ -695,8 +702,8 @@ public class PayrollCalculationService {
 
     private String explanationJson(PayrollRun run, BigDecimal eligibleDays, BigDecimal lopDays,
                                    BigDecimal payableDays, int calendarDaysInMonth,
-                                   BigDecimal basic, BigDecimal hra, BigDecimal other,
-                                   BigDecimal gross) {
+                                   BigDecimal basic, BigDecimal hra, BigDecimal da,
+                                   BigDecimal other, BigDecimal gross) {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("stage", "PRE_STATUTORY");
         data.put("prorationBasis", "CALENDAR_DAY");
@@ -706,6 +713,7 @@ public class PayrollCalculationService {
         data.put("payableCalendarDays", roundDays(payableDays).toPlainString());
         data.put("basic", basic.toPlainString());
         data.put("hra", hra.toPlainString());
+        data.put("da", da.toPlainString());
         data.put("otherFixedAllowances", other.toPlainString());
         data.put("grossEarnings", round(gross).toPlainString());
         data.put("statutory", "NOT_CALCULATED");

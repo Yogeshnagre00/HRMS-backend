@@ -69,6 +69,7 @@ public final class RowValidator {
         validateMoney(issues, rowNumber, CsvHeaders.CTC, row, true);
         validateMoney(issues, rowNumber, CsvHeaders.BASIC, row, true);
         validateMoney(issues, rowNumber, CsvHeaders.HRA, row, true);
+        validateMoney(issues, rowNumber, CsvHeaders.DEARNESS_ALLOWANCE, row, true);
         validateMoney(issues, rowNumber, CsvHeaders.OTHER_ALLOWANCES, row, true);
         validateDate(issues, rowNumber, CsvHeaders.EFFECTIVE_DATE, row, true);
 

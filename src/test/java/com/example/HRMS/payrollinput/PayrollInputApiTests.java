@@ -294,6 +294,7 @@ class PayrollInputApiTests {
                         .header("Authorization", auth).contentType("application/json")
                         .content("{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.00,"
                                 + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,"
+                                + "\"daMonthly\":5000.00,"
                                 + "\"otherFixedAllowancesMonthly\":25000.00}"))
                 .andExpect(status().isCreated());
         UUID run = payrollRun("DRAFT");

@@ -54,21 +54,22 @@ class CsvImportConfirmationApiTests {
             "Employee ID,Name,Joining Date,Exit Date,Employment Type,Department,"
             + "Designation,Location,PAN,UAN,PT State,Tax Regime,"
             + "Current-FY Cumulative Taxable Income,Current-FY TDS Already Deducted,"
-            + "Account Number,IFSC,CTC,Basic,HRA,Other Allowances,"
+            + "Account Number,IFSC,CTC,Basic,HRA,Dearness Allowance,Other Allowances,"
             + "Effective Date,Opening Leave Balance";
 
+    // DA between HRA and Other Allowances; E001 carries a non-zero DA (30000.00).
     private static final String ROW_E001 =
             "E001,Asha Rao,2026-04-01,,FULL_TIME,Engineering,Engineer,Mumbai,"
             + "AAAAA0000A,,Maharashtra,NEW_REGIME,"
             + "500000.00,25000.00,"
-            + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,"
+            + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,30000.00,0.00,"
             + "2026-04-01,12.00";
 
     private static final String ROW_E002 =
             "E002,Ravi Kumar,2026-04-01,,FULL_TIME,Sales,Manager,Delhi,"
             + "BBBBB1111B,,Karnataka,NEW_REGIME,"
             + "300000.00,10000.00,"
-            + "222233334444,ICIC0005678,900000.00,450000.00,90000.00,0.00,"
+            + "222233334444,ICIC0005678,900000.00,450000.00,90000.00,0.00,0.00,"
             + "2026-04-01,10.50";
 
     @Autowired private MockMvc mockMvc;
@@ -271,6 +272,7 @@ class CsvImportConfirmationApiTests {
         assertThat(c.getCtcMonthly()).isEqualByComparingTo("1200000.00");
         assertThat(c.getBasicMonthly()).isEqualByComparingTo("600000.00");
         assertThat(c.getHraMonthly()).isEqualByComparingTo("120000.00");
+        assertThat(c.getDaMonthly()).isEqualByComparingTo("30000.00");
         assertThat(c.getOtherFixedAllowancesMonthly()).isEqualByComparingTo("0.00");
         assertThat(c.getEffectiveFrom().toString()).isEqualTo("2026-04-01");
         assertThat(c.getEffectiveTo()).isNull();

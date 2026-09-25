@@ -112,6 +112,18 @@ class PayrollCalculationApiTests {
         return emp;
     }
 
+    /** Full-month employee with an explicit DA component (Basic/HRA/DA/Other). */
+    private UUID fullMonthEmployeeWithDa(String bizId, String basic, String hra, String da,
+                                         String other) {
+        UUID le = fixtures.activeLegalEntityId();
+        UUID emp = fixtures.insertEmployeeWithPeriod(le, bizId, bizId, "2026-01-01", null);
+        UUID cal = fixtures.insertWorkCalendar(le, "Std5Day-" + bizId, "2026-01-01", null);
+        fixtures.insertWorkCalendarAssignment(emp, cal, "2026-01-01", null, superUserId);
+        fixtures.insertCompensation(emp, "2026-01-01", null, "60000.00", basic, hra, da, other,
+                superUserId);
+        return emp;
+    }
+
     private MvcResult calculate(String auth, UUID runId) throws Exception {
         return mockMvc.perform(post("/api/v1/payroll/runs/" + runId + "/calculate")
                 .header("Authorization", auth)).andReturn();
@@ -594,5 +606,120 @@ class PayrollCalculationApiTests {
         // Zero gross has no earning lines; net still NULL (not computed).
         assertThat(d.get("lines").size()).isEqualTo(0);
         assertThat(d.get("netPay").isNull()).isTrue();
+    }
+
+    // ---- Phase 3: DA in gross + separate line -----------------------------
+
+    private java.math.BigDecimal lineAmount(JsonNode detail, String componentCode) {
+        for (JsonNode l : detail.get("lines")) {
+            if (componentCode.equals(l.get("componentCode").asString())) {
+                return new java.math.BigDecimal(l.get("amount").asString());
+            }
+        }
+        return null;
+    }
+
+    @Test
+    void daIncludedInGrossAsSeparateLine() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        // Basic 30000, HRA 15000, DA 6000, Other 9000 → June 2026 (30 days, 22 payable).
+        UUID emp = fullMonthEmployeeWithDa("E040", "30000.00", "15000.00", "6000.00", "9000.00");
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        // DA is its own line: 6000/30 * 22 = 4400.00.
+        assertThat(lineAmount(d, "DA")).isEqualByComparingTo("4400.00");
+        // 4 fixed lines: BASIC, HRA, DA, OTHER_FIXED_ALLOWANCES.
+        assertThat(d.get("lines").size()).isEqualTo(4);
+        // Gross = 60000/30 * 22 = 44000 (Basic+HRA+DA+Other prorated).
+        assertThat(d.get("grossEarnings").asDouble()).isEqualTo(44000.00);
+    }
+
+    @Test
+    void zeroDaWorksAndProducesNoDaLine() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        // DA = 0; addFixedLine omits zero-amount components.
+        UUID emp = fullMonthEmployeeWithDa("E041", "30000.00", "15000.00", "0.00", "15000.00");
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        assertThat(lineAmount(d, "DA")).isNull();
+        assertThat(d.get("grossEarnings").asDouble()).isEqualTo(44000.00);
+    }
+
+    @Test
+    void daProratedForLop() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        UUID emp = fullMonthEmployeeWithDa("E042", "30000.00", "15000.00", "6000.00", "9000.00");
+        // One full-day LOP on a working Monday reduces payable to 21.
+        fixtures.insertLeaveEntry(emp, "2026-06-01", "UNPAID_LOP_LEAVE", "1.00", superUserId);
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        assertThat(d.get("payableCalendarDays").asDouble()).isEqualTo(21.0);
+        // DA: 6000/30 * 21 = 4200.00.
+        assertThat(lineAmount(d, "DA")).isEqualByComparingTo("4200.00");
+    }
+
+    @Test
+    void daJoinerProratedFromJoiningDate() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        UUID le = fixtures.activeLegalEntityId();
+        // Joins 16 June 2026 → 11 scheduled working days payable.
+        UUID emp = fixtures.insertEmployeeWithPeriod(le, "E043", "Joiner", "2026-06-16", null);
+        UUID cal = fixtures.insertWorkCalendar(le, "Cal", "2026-01-01", null);
+        fixtures.insertWorkCalendarAssignment(emp, cal, "2026-01-01", null, superUserId);
+        fixtures.insertCompensation(emp, "2026-01-01", null, "60000.00", "30000.00",
+                "15000.00", "3000.00", "12000.00", superUserId);
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        assertThat(d.get("payableCalendarDays").asDouble()).isEqualTo(11.0);
+        // DA: 3000/30 * 11 = 1100.00.
+        assertThat(lineAmount(d, "DA")).isEqualByComparingTo("1100.00");
+    }
+
+    @Test
+    void daLeaverProratedUntilExit() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        UUID le = fixtures.activeLegalEntityId();
+        // Exit 15 June 2026 → 11 scheduled working days payable.
+        UUID emp = fixtures.insertEmployeeWithPeriod(le, "E044", "Leaver", "2026-01-01",
+                "2026-06-15");
+        UUID cal = fixtures.insertWorkCalendar(le, "Cal", "2026-01-01", null);
+        fixtures.insertWorkCalendarAssignment(emp, cal, "2026-01-01", null, superUserId);
+        fixtures.insertCompensation(emp, "2026-01-01", null, "60000.00", "30000.00",
+                "15000.00", "3000.00", "12000.00", superUserId);
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        assertThat(d.get("payableCalendarDays").asDouble()).isEqualTo(11.0);
+        assertThat(lineAmount(d, "DA")).isEqualByComparingTo("1100.00");
+    }
+
+    @Test
+    void daMidMonthRevisionUsesEffectiveStatePerDay() throws Exception {
+        String auth = setUpTenantAndPayrollAdmin();
+        UUID le = fixtures.activeLegalEntityId();
+        UUID emp = fixtures.insertEmployeeWithPeriod(le, "E045", "Revised", "2026-01-01", null);
+        UUID cal = fixtures.insertWorkCalendar(le, "Cal", "2026-01-01", null);
+        fixtures.insertWorkCalendarAssignment(emp, cal, "2026-01-01", null, superUserId);
+        // DA 3000 until 15 June (2000 → 100/day), revised DA 6000 from 16 June (200/day).
+        fixtures.insertCompensation(emp, "2026-01-01", "2026-06-15", "60000.00", "30000.00",
+                "15000.00", "3000.00", "12000.00", superUserId);
+        fixtures.insertCompensation(emp, "2026-06-16", null, "120000.00", "60000.00",
+                "30000.00", "6000.00", "24000.00", superUserId);
+        UUID runId = run("DRAFT", "0");
+        calculate(auth, runId);
+
+        JsonNode d = detail(auth, runId, emp);
+        // Days 1-15 scheduled (11) at DA 3000/30=100/day; days 16-30 scheduled (11)
+        // at DA 6000/30=200/day → 11*100 + 11*200 = 1100 + 2200 = 3300.
+        assertThat(lineAmount(d, "DA")).isEqualByComparingTo("3300.00");
     }
 }

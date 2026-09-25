@@ -214,6 +214,7 @@ public class CsvImportConfirmationService {
                 money(r, CsvHeaders.CTC),
                 money(r, CsvHeaders.BASIC),
                 money(r, CsvHeaders.HRA),
+                money(r, CsvHeaders.DEARNESS_ALLOWANCE),
                 money(r, CsvHeaders.OTHER_ALLOWANCES),
                 null);
     }

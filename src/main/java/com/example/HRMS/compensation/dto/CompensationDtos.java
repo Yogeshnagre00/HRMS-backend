@@ -46,6 +46,11 @@ public final class CompensationDtos {
                     message = "hraMonthly must have at most 2 decimal places")
             BigDecimal hraMonthly,
 
+            @NotNull @DecimalMin(value = "0.00", message = "daMonthly must be non-negative")
+            @Digits(integer = 16, fraction = 2,
+                    message = "daMonthly must have at most 2 decimal places")
+            BigDecimal daMonthly,
+
             @NotNull @DecimalMin(value = "0.00",
                     message = "otherFixedAllowancesMonthly must be non-negative")
             @Digits(integer = 16, fraction = 2,
@@ -63,6 +68,7 @@ public final class CompensationDtos {
             BigDecimal ctcMonthly,
             BigDecimal basicMonthly,
             BigDecimal hraMonthly,
+            BigDecimal daMonthly,
             BigDecimal otherFixedAllowancesMonthly,
             String reason,
             String source,

@@ -32,7 +32,7 @@ class CompensationApiTests {
 
     private static final String VALID =
             "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.00,"
-            + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,"
+            + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":5000.00,"
             + "\"otherFixedAllowancesMonthly\":25000.00}";
 
     @Autowired private MockMvc mockMvc;
@@ -95,6 +95,7 @@ class CompensationApiTests {
                 .andExpect(jsonPath("$.effectiveFrom").value("2026-04-01"))
                 .andExpect(jsonPath("$.effectiveTo").doesNotExist())
                 .andExpect(jsonPath("$.ctcMonthly").value(100000.00))
+                .andExpect(jsonPath("$.daMonthly").value(5000.00))
                 .andExpect(jsonPath("$.source").value("MANUAL"))
                 .andExpect(jsonPath("$.createdBy").exists());
         assertThat(auditLogRepository.findAll().stream()
@@ -140,7 +141,7 @@ class CompensationApiTests {
         auditLogRepository.deleteAll();
 
         String revBody = "{\"effectiveFrom\":\"2026-06-01\",\"ctcMonthly\":120000.00,"
-                + "\"basicMonthly\":60000.00,\"hraMonthly\":30000.00,"
+                + "\"basicMonthly\":60000.00,\"hraMonthly\":30000.00,\"daMonthly\":6000.00,"
                 + "\"otherFixedAllowancesMonthly\":30000.00,\"reason\":\"annual hike\"}";
         String revised = mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation/revisions")
                         .header("Authorization", auth).contentType("application/json").content(revBody))
@@ -179,7 +180,7 @@ class CompensationApiTests {
                 .andExpect(status().isCreated());
         // Revision effective on the same day as the current start → overlap → 409.
         String revBody = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":120000.00,"
-                + "\"basicMonthly\":60000.00,\"hraMonthly\":30000.00,"
+                + "\"basicMonthly\":60000.00,\"hraMonthly\":30000.00,\"daMonthly\":6000.00,"
                 + "\"otherFixedAllowancesMonthly\":30000.00}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation/revisions")
                         .header("Authorization", auth).contentType("application/json").content(revBody))
@@ -228,7 +229,7 @@ class CompensationApiTests {
         String auth = bearer("superadmin");
         String empId = createEmployee(auth);
         String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":-1.00,"
-                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,"
+                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":5000.00,"
                 + "\"otherFixedAllowancesMonthly\":25000.00}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
                         .header("Authorization", auth).contentType("application/json").content(body))
@@ -242,7 +243,7 @@ class CompensationApiTests {
         String auth = bearer("superadmin");
         String empId = createEmployee(auth);
         String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":999999.00,"
-                + "\"basicMonthly\":1.00,\"hraMonthly\":1.00,"
+                + "\"basicMonthly\":1.00,\"hraMonthly\":1.00,\"daMonthly\":1.00,"
                 + "\"otherFixedAllowancesMonthly\":1.00}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
                         .header("Authorization", auth).contentType("application/json").content(body))
@@ -256,7 +257,7 @@ class CompensationApiTests {
         String auth = bearer("superadmin");
         String empId = createEmployee(auth);
         String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.55,"
-                + "\"basicMonthly\":50000.25,\"hraMonthly\":25000.10,"
+                + "\"basicMonthly\":50000.25,\"hraMonthly\":25000.10,\"daMonthly\":5000.05,"
                 + "\"otherFixedAllowancesMonthly\":24999.20}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
                         .header("Authorization", auth).contentType("application/json").content(body))
@@ -270,7 +271,7 @@ class CompensationApiTests {
         String auth = bearer("superadmin");
         String empId = createEmployee(auth);
         String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.555,"
-                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,"
+                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":5000.00,"
                 + "\"otherFixedAllowancesMonthly\":25000.00}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
                         .header("Authorization", auth).contentType("application/json").content(body))
@@ -338,11 +339,68 @@ class CompensationApiTests {
                         .header("Authorization", auth).contentType("application/json").content(VALID))
                 .andExpect(status().isCreated());
         String revBody = "{\"effectiveFrom\":\"2027-01-01\",\"ctcMonthly\":150000.00,"
-                + "\"basicMonthly\":75000.00,\"hraMonthly\":37500.00,"
+                + "\"basicMonthly\":75000.00,\"hraMonthly\":37500.00,\"daMonthly\":7500.00,"
                 + "\"otherFixedAllowancesMonthly\":37500.00}";
         mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation/revisions")
                         .header("Authorization", auth).contentType("application/json").content(revBody))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.effectiveFrom").value("2027-01-01"));
+    }
+
+    // --- Phase 3: DA (Dearness Allowance) --------------------------------
+
+    @Test
+    void daZeroAccepted() throws Exception {
+        String auth = bearer("superadmin");
+        String empId = createEmployee(auth);
+        String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.00,"
+                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":0.00,"
+                + "\"otherFixedAllowancesMonthly\":25000.00}";
+        mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
+                        .header("Authorization", auth).contentType("application/json").content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.daMonthly").value(0.00));
+    }
+
+    @Test
+    void daNegativeRejected() throws Exception {
+        String auth = bearer("superadmin");
+        String empId = createEmployee(auth);
+        String body = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.00,"
+                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":-1.00,"
+                + "\"otherFixedAllowancesMonthly\":25000.00}";
+        mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
+                        .header("Authorization", auth).contentType("application/json").content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    void daChangesAcrossRevisionOldRecordUnchanged() throws Exception {
+        String auth = bearer("superadmin");
+        String empId = createEmployee(auth);
+        // First: DA 2000.
+        String first = "{\"effectiveFrom\":\"2026-04-01\",\"ctcMonthly\":100000.00,"
+                + "\"basicMonthly\":50000.00,\"hraMonthly\":25000.00,\"daMonthly\":2000.00,"
+                + "\"otherFixedAllowancesMonthly\":23000.00}";
+        String created = mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation")
+                        .header("Authorization", auth).contentType("application/json").content(first))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        String firstId = objectMapper.readTree(created).get("id").asString();
+
+        // Revision effective 2026-09-15: DA 3000.
+        String rev = "{\"effectiveFrom\":\"2026-09-15\",\"ctcMonthly\":110000.00,"
+                + "\"basicMonthly\":55000.00,\"hraMonthly\":27000.00,\"daMonthly\":3000.00,"
+                + "\"otherFixedAllowancesMonthly\":25000.00}";
+        mockMvc.perform(post("/api/v1/employees/" + empId + "/compensation/revisions")
+                        .header("Authorization", auth).contentType("application/json").content(rev))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.daMonthly").value(3000.00));
+
+        // Old record preserved with its original DA and closed at 2026-09-14.
+        mockMvc.perform(get("/api/v1/compensation/" + firstId).header("Authorization", auth))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.daMonthly").value(2000.00))
+                .andExpect(jsonPath("$.effectiveTo").value("2026-09-14"));
     }
 }

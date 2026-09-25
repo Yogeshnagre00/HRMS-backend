@@ -45,15 +45,15 @@ class CsvImportApiTests {
             "Employee ID,Name,Joining Date,Exit Date,Employment Type,Department,"
             + "Designation,Location,PAN,UAN,PT State,Tax Regime,"
             + "Current-FY Cumulative Taxable Income,Current-FY TDS Already Deducted,"
-            + "Account Number,IFSC,CTC,Basic,HRA,Other Allowances,"
+            + "Account Number,IFSC,CTC,Basic,HRA,Dearness Allowance,Other Allowances,"
             + "Effective Date,Opening Leave Balance";
 
-    // A fully valid data row.
+    // A fully valid data row (DA between HRA and Other Allowances).
     private static final String VALID_ROW =
             "E001,Asha Rao,2026-04-01,,FULL_TIME,Engineering,Engineer,Mumbai,"
             + "AAAAA0000A,,Maharashtra,NEW_REGIME,"
             + "500000.00,25000.00,"
-            + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,"
+            + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,0.00,"
             + "2026-04-01,12.00";
 
     @Autowired private MockMvc mockMvc;
@@ -218,6 +218,59 @@ class CsvImportApiTests {
         assertThat(body.get("status").asString()).isEqualTo("VALIDATION_FAILED");
     }
 
+    // --- Phase 3: Dearness Allowance canonical header --------------------
+
+    @Test
+    void exactDearnessAllowanceHeaderAccepted() throws Exception {
+        String auth = bearer("superadmin");
+        createCompanyAndLegalEntity(auth);
+        // VALID_ROW/HEADERS already carry the exact "Dearness Allowance" header.
+        MvcResult result = upload(auth, HEADERS + "\n" + VALID_ROW);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("status").asString()).isEqualTo("VALIDATION_PASSED");
+    }
+
+    @Test
+    void dearnessAllowanceWrongCaseRejected() throws Exception {
+        String auth = bearer("superadmin");
+        createCompanyAndLegalEntity(auth);
+        String badHeaders = HEADERS.replace("Dearness Allowance", "dearness allowance");
+        MvcResult result = upload(auth, badHeaders + "\n" + VALID_ROW);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("status").asString()).isEqualTo("VALIDATION_FAILED");
+    }
+
+    @Test
+    void dearnessAllowanceAbbreviationDaRejected() throws Exception {
+        String auth = bearer("superadmin");
+        createCompanyAndLegalEntity(auth);
+        String badHeaders = HEADERS.replace("Dearness Allowance", "DA");
+        MvcResult result = upload(auth, badHeaders + "\n" + VALID_ROW);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("status").asString()).isEqualTo("VALIDATION_FAILED");
+    }
+
+    @Test
+    void dearnessAllowanceCamelCaseAliasRejected() throws Exception {
+        String auth = bearer("superadmin");
+        createCompanyAndLegalEntity(auth);
+        String badHeaders = HEADERS.replace("Dearness Allowance", "daMonthly");
+        MvcResult result = upload(auth, badHeaders + "\n" + VALID_ROW);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("status").asString()).isEqualTo("VALIDATION_FAILED");
+    }
+
+    @Test
+    void missingDearnessAllowanceHeaderIsBlocking() throws Exception {
+        String auth = bearer("superadmin");
+        createCompanyAndLegalEntity(auth);
+        // Drop the DA header (and keep the row's DA cell → column mismatch/missing header).
+        String badHeaders = HEADERS.replace(",Dearness Allowance", "");
+        MvcResult result = upload(auth, badHeaders + "\n" + VALID_ROW);
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertThat(body.get("status").asString()).isEqualTo("VALIDATION_FAILED");
+    }
+
     // ---- ROW LEVEL -------------------------------------------------------
 
     @Test
@@ -228,7 +281,7 @@ class CsvImportApiTests {
         String row = "E001,,2026-04-01,,FULL_TIME,,,,"
                 + "AAAAA0000A,,Maharashtra,NEW_REGIME,"
                 + "500000.00,25000.00,"
-                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,"
+                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,0.00,"
                 + "2026-04-01,12.00";
         MvcResult result = upload(auth, HEADERS + "\n" + row);
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
@@ -429,7 +482,7 @@ class CsvImportApiTests {
         String row = "E001,,bad-date,,FULL_TIME,,,,"
                 + "BADPAN,,Maharashtra,NEW_REGIME,"
                 + "500000.00,25000.00,"
-                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,"
+                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,0.00,"
                 + "2026-04-01,12.00";
         MvcResult result = upload(auth, HEADERS + "\n" + row);
         JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
@@ -488,7 +541,7 @@ class CsvImportApiTests {
         String row = "E001,,bad-date,,FULL_TIME,,,,"
                 + "BADPAN,,Maharashtra,NEW_REGIME,"
                 + "500000.00,25000.00,"
-                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,"
+                + "123456789012,HDFC0001234,1200000.00,600000.00,120000.00,0.00,0.00,"
                 + "2026-04-01,12.00";
         MvcResult r1 = upload(auth, HEADERS + "\n" + row);
         MvcResult r2 = upload(auth, HEADERS + "\n" + row);

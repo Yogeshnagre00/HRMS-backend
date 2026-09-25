@@ -230,14 +230,23 @@ public class RbacTestFixtures {
     public UUID insertCompensation(UUID employeeId, String effectiveFrom, String effectiveTo,
                                    String ctc, String basic, String hra, String other,
                                    UUID createdBy) {
+        // DA defaults to 0 for callers that predate the DA component (Phase 3).
+        return insertCompensation(employeeId, effectiveFrom, effectiveTo, ctc, basic, hra,
+                "0.00", other, createdBy);
+    }
+
+    /** Insert an effective-dated compensation record including DA; returns id. */
+    public UUID insertCompensation(UUID employeeId, String effectiveFrom, String effectiveTo,
+                                   String ctc, String basic, String hra, String da, String other,
+                                   UUID createdBy) {
         UUID id = UUID.randomUUID();
         jdbcTemplate.update(
                 "INSERT INTO compensation_record (id, employee_id, effective_from, effective_to, "
-                        + "ctc_monthly, basic_monthly, hra_monthly, other_fixed_allowances_monthly, "
-                        + "source, created_by, created_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'MANUAL', ?, CURRENT_TIMESTAMP)",
+                        + "ctc_monthly, basic_monthly, hra_monthly, da_monthly, "
+                        + "other_fixed_allowances_monthly, source, created_by, created_at) "
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'MANUAL', ?, CURRENT_TIMESTAMP)",
                 id.toString(), employeeId.toString(), effectiveFrom, effectiveTo, ctc, basic, hra,
-                other, createdBy.toString());
+                da, other, createdBy.toString());
         return id;
     }
 
